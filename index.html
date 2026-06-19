@@ -1565,6 +1565,29 @@ function updateGraph(){
 document.getElementById('fg').addEventListener('click',()=>closeDetail());
 
 // ═══════════════════════════════════════════════════════
+// Obsidian deep-link + grupare pe temă (folder)
+// ═══════════════════════════════════════════════════════
+const VAULT_NAME='curriculumEdTehnTIC';
+function obsidianUrl(n){
+  const f=n.path||((n.folder?n.folder+'/':'')+n.id+'.md');
+  return 'obsidian://open?vault='+encodeURIComponent(VAULT_NAME)+'&file='+encodeURIComponent(f);
+}
+const FOLDER_LABELS={
+  'competente_specifice':'① Competențe specifice',
+  'conceptia_disciplinei':'⓪ Concepția disciplinei',
+  'dig_unitati_competenta':'② Unități de competență — Digital/TIC',
+  'tehn_unitati_competenta':'② Unități de competență — Tehnologică',
+  'dig_unitati_invatare':'③ Unități de învățare — Digital/TIC',
+  'tehn_unitati_invatare':'③ Unități de învățare — Tehnologică',
+  'dig_unitati_continut':'④ Unități de conținut — Digital/TIC',
+  'tehn_unitati_continut':'④ Unități de conținut — Tehnologică',
+  'dig_rezultate_invatare':'⑤ Rezultate ale învățării — Digital/TIC',
+  'tehn_rezultate_invatare':'⑤ Rezultate ale învățării — Tehnologică',
+  'finalitati_per_clase':'⑥ Finalitățile învățării (pe clase)'
+};
+const FOLDER_ORDER=Object.keys(FOLDER_LABELS);
+
+// ═══════════════════════════════════════════════════════
 // VIEW 6 — EXPLORER
 // ═══════════════════════════════════════════════════════
 function filterExplorer(){
@@ -1592,27 +1615,28 @@ function filterExplorer(){
   document.getElementById('ecnt').textContent=nodes.length+' rezultate';
   const grid=document.getElementById('exp-grid');
   grid.innerHTML='';
+  grid.style.display='block';
 
   if(!nodes.length){
     grid.innerHTML='<div class="empty-state">Niciun rezultat găsit.</div>';
     return;
   }
 
-  nodes.forEach(n=>{
+  function makeCard(n){
     const card=document.createElement('div');
     card.className='ncard';
     card.addEventListener('click',()=>showDetail(n.id));
     const compCls=n.component==='tic'?'b-tic':n.component==='et'?'b-et':'b-comun';
     const compLbl=n.component==='tic'?'TIC':n.component==='et'?'ET':'Comun';
-    const typeMap={cs:'CS',uc:'UC',ul:'UInv',finalitati:'Finalități',conceptie:'Concepție'};
+    const typeMap={cs:'CS',uc:'UC',ul:'UInv',ucon:'U.conț.',rezultat:'RÎ',finalitati:'Finalități',conceptie:'Concepție'};
     const typeLbl=typeMap[n.type]||n.type;
     const clsBadges=Array.isArray(n.class)?n.class.map(c=>`<span class="badge" style="background:#f0f2f5;color:var(--muted)">Cls.${ROMAN[c-1]}</span>`).join(''):'';
     const ndc=ndvClass(n.niveldezv);
     const ndvBadge=n.niveldezv?`<span class="ndv-badge ${ndc}" style="font-size:.68rem">${n.niveldezv}</span>`:'';
     const tagBadges=n.tags.slice(0,4).map(t=>`<span class="badge" style="background:#f8f9fa;color:var(--muted);font-size:.65rem">${t}</span>`).join('');
-
+    const obs=`<a href="${obsidianUrl(n)}" target="_blank" title="Deschide în Obsidian" onclick="event.stopPropagation()" style="float:right;font-size:.6rem;color:#7c3aed;text-decoration:none;border:1px solid #e2e8f0;border-radius:4px;padding:1px 5px;font-weight:600">↗ Obsidian</a>`;
     card.innerHTML=`
-      <div class="ncard-title">${n.title}</div>
+      <div class="ncard-title">${obs}${n.title}</div>
       ${n.summary?`<div class="ncard-sum">${n.summary}</div>`:''}
       <div class="ncard-meta">
         <span class="badge b-type">${typeLbl}</span>
@@ -1622,7 +1646,25 @@ function filterExplorer(){
         ${clsBadges}
         ${tagBadges}
       </div>`;
-    grid.appendChild(card);
+    return card;
+  }
+
+  // grupare pe temă/folder, în ordinea ierarhiei curriculare
+  const groups={};
+  nodes.forEach(n=>{(groups[n.folder]=groups[n.folder]||[]).push(n);});
+  const ordered=FOLDER_ORDER.filter(f=>groups[f]).concat(Object.keys(groups).filter(f=>!FOLDER_ORDER.includes(f)));
+  ordered.forEach(f=>{
+    const sec=document.createElement('div');
+    sec.style.marginBottom='18px';
+    const h=document.createElement('h3');
+    h.textContent=(FOLDER_LABELS[f]||f)+'  ('+groups[f].length+')';
+    h.style.cssText='margin:10px 2px 8px;font-size:.92rem;color:#2c3e50;border-bottom:2px solid var(--border);padding-bottom:5px';
+    sec.appendChild(h);
+    const sub=document.createElement('div');
+    sub.style.cssText='display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:10px';
+    groups[f].forEach(n=>sub.appendChild(makeCard(n)));
+    sec.appendChild(sub);
+    grid.appendChild(sec);
   });
 }
 ['eq','et2','ec','ecls','ecs'].forEach(id=>{
@@ -1652,6 +1694,8 @@ function showDetail(id){
   const expects   =out.filter(l=>l.type==='Expects');
   const expectedBy=out.filter(l=>l.type==='Expected By');
   const includedIn=(lByTgt[id]||[]).filter(l=>l.type==='Consists Of');
+  const develops  =out.filter(l=>l.type==='Develops');
+  const developedBy=(lByTgt[id]||[]).filter(l=>l.type==='Develops');
 
   function relHtml(links,getIdFn){
     if(!links.length) return '<li style="color:var(--muted)">—</li>';
@@ -1669,7 +1713,8 @@ function showDetail(id){
       ${n.cs.map(c=>`<span class="badge b-cs${c}">CS ${c}</span>`).join('')}
       ${n.niveldezv?`<span class="ndv-badge ${ndc}">${n.niveldezv}</span>`:''}
     </div>
-    <div style="font-size:.77rem;color:var(--muted);margin-bottom:8px">${clsStr}${n.ciclu?' · '+n.ciclu:''}</div>`;
+    <div style="font-size:.77rem;color:var(--muted);margin-bottom:8px">${clsStr}${n.ciclu?' · '+n.ciclu:''}</div>
+    <div style="margin-bottom:10px"><a href="${obsidianUrl(n)}" target="_blank" style="font-size:.72rem;color:#7c3aed;text-decoration:none;border:1px solid #e2e8f0;border-radius:5px;padding:3px 9px;display:inline-block;font-weight:600">↗ Deschide în Obsidian</a></div>`;
 
   if(n.actdom||n.produsfinale){
     body+=`<div class="dp-sec">`;
@@ -1711,10 +1756,12 @@ function showDetail(id){
   }
 
   if(partOf.length) body+=`<div class="dp-sec"><h4>Part Of</h4><ul class="rel-list">${relHtml(partOf,l=>l.target)}</ul></div>`;
-  if(consistsOf.length) body+=`<div class="dp-sec"><h4>Consists Of</h4><ul class="rel-list">${relHtml(consistsOf,l=>l.target)}</ul></div>`;
-  if(expects.length) body+=`<div class="dp-sec"><h4>Expects</h4><ul class="rel-list">${relHtml(expects,l=>l.target)}</ul></div>`;
-  if(expectedBy.length) body+=`<div class="dp-sec"><h4>Expected By</h4><ul class="rel-list">${relHtml(expectedBy,l=>l.target)}</ul></div>`;
+  if(consistsOf.length) body+=`<div class="dp-sec"><h4>Constă din (Consists Of)</h4><ul class="rel-list">${relHtml(consistsOf,l=>l.target)}</ul></div>`;
+  if(develops.length) body+=`<div class="dp-sec"><h4>Dezvoltă → UC (Develops)</h4><ul class="rel-list">${relHtml(develops,l=>l.target)}</ul></div>`;
+  if(expects.length) body+=`<div class="dp-sec"><h4>Necesită (Expects)</h4><ul class="rel-list">${relHtml(expects,l=>l.target)}</ul></div>`;
+  if(expectedBy.length) body+=`<div class="dp-sec"><h4>Este necesară pentru (Expected By)</h4><ul class="rel-list">${relHtml(expectedBy,l=>l.target)}</ul></div>`;
   if(includedIn.length) body+=`<div class="dp-sec"><h4>Inclus în UC</h4><ul class="rel-list">${relHtml(includedIn,l=>l.source)}</ul></div>`;
+  if(developedBy.length) body+=`<div class="dp-sec"><h4>Dezvoltată de (conținut/rezultate)</h4><ul class="rel-list">${relHtml(developedBy,l=>l.source)}</ul></div>`;
 
   if(n.updated) body+=`<div style="margin-top:14px;font-size:.69rem;color:var(--muted)">Actualizat: ${n.updated}</div>`;
 
