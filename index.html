@@ -1,0 +1,1740 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Curriculum Viewer — Educație Tehnologică și TIC</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{font-size:14px}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:#f0f2f5;color:#2c3e50;height:100vh;display:flex;flex-direction:column;overflow:hidden}
+:root{
+  --cs1:#27ae60;--cs1l:#eafaf1;--cs2:#2980b9;--cs2l:#ebf5fb;
+  --cs3:#e67e22;--cs3l:#fef5e7;--cs4:#8e44ad;--cs4l:#f5eef8;
+  --tic:#16a085;--et:#c0392b;--border:#dde1e7;--muted:#7f8c8d;
+  --accent:#2980b9;--card:#fff;
+}
+
+/* ── HEADER ─────────────────────────────────────────────────── */
+header{background:#2c3e50;color:#fff;padding:0 20px;height:50px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;box-shadow:0 2px 6px rgba(0,0,0,.25)}
+header h1{font-size:1.05rem;font-weight:600}
+.hdr-sub{font-size:.78rem;color:#95a5a6;margin-left:10px}
+.hdr-meta{font-size:.72rem;color:#7f8c8d}
+
+/* ── GLOBAL FILTER BAR ──────────────────────────────────────── */
+.gfilter{background:#fff;border-bottom:1px solid var(--border);padding:7px 16px;display:flex;gap:8px;align-items:center;flex-shrink:0;flex-wrap:wrap;position:relative;z-index:20}
+.gfilter-search{display:flex;align-items:center;gap:6px;flex:1;min-width:200px;max-width:380px;background:#f0f2f5;border:1px solid var(--border);border-radius:20px;padding:4px 12px}
+.gfilter-search input{border:none;background:transparent;font-size:.85rem;color:#2c3e50;outline:none;flex:1;min-width:0}
+.gfilter-search svg{color:var(--muted);flex-shrink:0}
+.tag-toggle-btn{background:#f0f2f5;border:1px solid var(--border);border-radius:5px;padding:5px 12px;cursor:pointer;font-size:.8rem;color:var(--muted);white-space:nowrap}
+.tag-toggle-btn:hover{background:#e8ecf0}
+.tag-toggle-btn.has-active{background:#eaf2ff;border-color:#2980b9;color:#2980b9;font-weight:600}
+.active-tags-bar{display:flex;gap:4px;flex-wrap:wrap;align-items:center}
+.atag{background:#eaf2ff;color:#2471a3;border-radius:12px;padding:2px 8px 2px 10px;font-size:.73rem;display:inline-flex;align-items:center;gap:4px}
+.atag button{background:none;border:none;cursor:pointer;color:inherit;padding:0;font-size:1rem;line-height:1;opacity:.7}
+.atag button:hover{opacity:1}
+.gf-stats{font-size:.72rem;color:var(--muted);margin-left:auto;white-space:nowrap}
+
+/* ── TAG CLOUD PANEL ────────────────────────────────────────── */
+.tag-cloud-wrap{display:none;position:absolute;top:100%;left:16px;right:16px;background:#fff;border:1px solid var(--border);border-radius:7px;box-shadow:0 4px 18px rgba(0,0,0,.12);z-index:30;padding:12px;max-height:220px;overflow-y:auto}
+.tag-cloud-wrap.open{display:block}
+.tag-group{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:8px}
+.tag-group-lbl{font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);width:100%;margin-top:4px}
+.tc-chip{padding:2px 9px;border-radius:10px;font-size:.72rem;cursor:pointer;background:#f0f2f5;color:var(--muted);border:1px solid transparent;white-space:nowrap;transition:all .1s}
+.tc-chip:hover{background:#e0e6ef}
+.tc-chip.active{background:#2980b9;color:#fff;border-color:#2980b9}
+
+/* ── TABS ───────────────────────────────────────────────────── */
+.tabs{background:#fff;border-bottom:2px solid var(--border);display:flex;padding:0 16px;gap:2px;flex-shrink:0;overflow-x:auto}
+.tab-btn{padding:9px 15px;border:none;background:none;cursor:pointer;font-size:.85rem;color:var(--muted);border-bottom:3px solid transparent;margin-bottom:-2px;transition:color .15s,border-color .15s;white-space:nowrap;flex-shrink:0}
+.tab-btn:hover{color:#2c3e50}
+.tab-btn.active{color:var(--accent);border-bottom-color:var(--accent);font-weight:600}
+
+/* ── LAYOUT ─────────────────────────────────────────────────── */
+.app-body{display:flex;flex:1;overflow:hidden}
+.view{display:none;flex:1;overflow:auto;padding:16px;flex-direction:column;gap:10px}
+.view.active{display:flex}
+#view-graph{padding:0}
+#view-tree{padding:0}
+
+/* ── DETAIL PANEL ───────────────────────────────────────────── */
+#detail-panel{width:0;min-width:0;background:#fff;border-left:2px solid var(--border);overflow:hidden;transition:width .22s ease,min-width .22s ease;display:flex;flex-direction:column;flex-shrink:0}
+#detail-panel.open{width:340px;min-width:340px}
+.dp-head{padding:14px 16px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:flex-start;gap:8px}
+.dp-head h3{font-size:.9rem;line-height:1.4;flex:1}
+.dp-close{background:none;border:none;cursor:pointer;font-size:1.1rem;color:var(--muted);padding:0}
+.dp-body{padding:14px 16px;overflow-y:auto;flex:1;font-size:.84rem}
+.dp-sec{margin-top:11px}
+.dp-sec h4{font-size:.7rem;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin-bottom:5px;font-weight:700}
+.rel-list{list-style:none;display:flex;flex-direction:column;gap:3px}
+.rel-link{color:var(--accent);cursor:pointer;font-size:.82rem;text-decoration:none}
+.rel-link:hover{text-decoration:underline}
+.dp-summary{font-size:.82rem;line-height:1.5;padding:9px 11px;background:#f8f9fa;border-radius:5px;border-left:3px solid var(--accent);margin-top:8px}
+.dp-continut{padding-left:16px;margin:0;font-size:.8rem;line-height:1.6;color:#444}
+.dp-notiuni{display:flex;flex-wrap:wrap;gap:3px;margin-top:4px}
+
+/* ── BADGES ─────────────────────────────────────────────────── */
+.badge{display:inline-block;padding:2px 7px;border-radius:10px;font-size:.72rem;font-weight:600;margin:1px}
+.b-cs1{background:var(--cs1l);color:var(--cs1)}.b-cs2{background:var(--cs2l);color:var(--cs2)}
+.b-cs3{background:var(--cs3l);color:var(--cs3)}.b-cs4{background:var(--cs4l);color:var(--cs4)}
+.b-tic{background:#e8f8f5;color:var(--tic)}.b-et{background:#fdedec;color:var(--et)}
+.b-comun{background:#f2f3f4;color:var(--muted)}.b-type{background:#eaf2ff;color:#2471a3}
+.b-finalitati{background:var(--cs4l);color:var(--cs4)}
+.fin-cs-block{margin-bottom:12px;padding-left:8px;border-left:3px solid var(--border)}
+.fin-cs-head{font-size:.72rem;font-weight:700;color:#555;margin-bottom:5px;padding-bottom:3px;border-bottom:1px solid var(--border)}
+.fin-sub{margin-bottom:4px}
+.fin-sub-label{font-size:.7rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;display:block;margin-bottom:2px}
+.fin-sub ul{margin:0;padding-left:14px;font-size:.76rem;line-height:1.55;color:#333}
+.fin-sub ul li{margin-bottom:1px}
+.notiune-tag{background:#eaf2ff;color:#2471a3;border-radius:3px;padding:1px 6px;font-size:.7rem;display:inline-block}
+
+/* ── TOOLBAR ─────────────────────────────────────────────────── */
+.toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;background:#fff;padding:10px 14px;border-radius:7px;border:1px solid var(--border);flex-shrink:0}
+.toolbar label{font-size:.78rem;color:var(--muted)}
+.toolbar select,.toolbar input[type=text]{padding:4px 9px;border:1px solid var(--border);border-radius:5px;font-size:.82rem;color:#2c3e50;background:#fff}
+.toolbar input[type=text]{min-width:140px}
+.cnt-lbl{margin-left:auto;font-size:.76rem;color:var(--muted)}
+
+/* ── NIVEL DE DEZVOLTARE COLORS ────────────────────────────── */
+.ndv-initiere    {--ndvc:#dbeafe;--ndvt:#1e40af}
+.ndv-familiarizare{--ndvc:#d1fae5;--ndvt:#065f46}
+.ndv-consolidare {--ndvc:#fef3c7;--ndvt:#92400e}
+.ndv-aprofundare {--ndvc:#fed7aa;--ndvt:#c2410c}
+.ndv-dezvoltare  {--ndvc:#dcfce7;--ndvt:#166534}
+.ndv-sinteza     {--ndvc:#e9d5ff;--ndvt:#6b21a8}
+.ndv-tranzitie   {--ndvc:#fce7f3;--ndvt:#9d174d}
+
+/* ── PROGRESSION VIEW ───────────────────────────────────────── */
+.prog-wrap{overflow:auto;flex:1;border-radius:7px;border:1px solid var(--border)}
+.prog-table{border-collapse:collapse;font-size:.79rem}
+.prog-table th{background:#f8f9fa;padding:7px 10px;border:1px solid var(--border);font-weight:600;white-space:nowrap;position:sticky;top:0;z-index:5}
+.prog-table td{padding:4px;border:1px solid var(--border);vertical-align:top}
+.prog-uc-hdr{min-width:220px;text-align:left;position:sticky;left:0;z-index:6;background:#f8f9fa}
+.prog-cls-hdr{text-align:center;min-width:135px}
+.prog-lbl-cell{position:sticky;left:0;background:#fff;z-index:3;padding:5px 8px !important;cursor:pointer;min-width:220px}
+.prog-lbl-cell:hover{background:#f8f9fa !important}
+.comp-tic .prog-lbl-cell{border-left:3px solid var(--tic)}
+.comp-et  .prog-lbl-cell{border-left:3px solid var(--et)}
+.uc-cod-s{font-weight:700;font-size:.82rem}
+.uc-ttl-s{font-size:.69rem;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:195px;display:block}
+.prog-sep td{padding:5px 10px;font-weight:700}
+.prog-sep-inner{display:flex;align-items:center;gap:8px}
+.cs-badge-pill{padding:2px 10px;border-radius:4px;font-size:.74rem;color:#fff;font-weight:700}
+.cs1p{background:var(--cs1)}.cs2p{background:var(--cs2)}.cs3p{background:var(--cs3)}.cs4p{background:var(--cs4)}
+.fin-badge-pill{background:var(--cs4);padding:2px 10px;border-radius:4px;font-size:.74rem;color:#fff;font-weight:700}
+.prog-cell{padding:4px;vertical-align:top}
+.prog-empty{background:#fafafa}
+.prog-chip{border-radius:5px;padding:4px 7px;margin:2px 0;font-size:.72rem;cursor:pointer;border:1.5px solid transparent;display:block;background:var(--ndvc,#f0f2f5);color:var(--ndvt,var(--muted));transition:border-color .12s}
+.prog-chip:hover{border-color:var(--ndvt,#aaa)}
+.prog-chip.active{border-color:var(--accent);box-shadow:0 0 0 2px rgba(41,128,185,.18)}
+.prog-chip-code{font-weight:600;display:block;font-size:.73rem}
+.ndv-pill-sm{font-size:.62rem;opacity:.75}
+.prog-expand{background:#fff;border:1px solid var(--border);border-radius:5px;padding:8px 10px;margin-top:4px;font-size:.74rem;box-shadow:0 2px 8px rgba(0,0,0,.06)}
+.prog-exp-title{font-weight:600;color:var(--accent);cursor:pointer;margin-bottom:5px;line-height:1.3}
+.prog-exp-title:hover{text-decoration:underline}
+.prog-exp-meta{color:var(--muted);font-size:.69rem;margin-bottom:2px}
+.prog-continut-ol{margin:4px 0 4px 14px;padding:0;line-height:1.55}
+.prog-continut-ol li{margin:1px 0}
+.prog-notiuni-row{margin-top:5px;display:flex;flex-wrap:wrap;gap:3px}
+.prog-exp-empty{color:#bdc3c7;font-style:italic;font-size:.7rem;margin-top:3px}
+.fin-chip{background:#e9d5ff !important;color:#6b21a8 !important}
+.prog-final-row .prog-lbl-cell{font-weight:600;color:var(--muted);font-size:.78rem;cursor:default}
+.prog-uc-dot{width:7px;height:7px;border-radius:50%;display:inline-block;margin-right:5px;flex-shrink:0;vertical-align:middle}
+.prog-uc-dot.tic{background:var(--tic)}.prog-uc-dot.et{background:var(--et)}
+.prog-nomatch{opacity:.25}
+
+/* ── HARTĂ CURRICULUM (graf interactiv) ─────────────────────── */
+.harta-bar{background:#fff;border-bottom:1px solid var(--border);padding:7px 14px;display:flex;gap:10px;align-items:center;flex-shrink:0;flex-wrap:wrap}
+.harta-search{display:flex;align-items:center;gap:6px;background:#f0f2f5;border:1px solid var(--border);border-radius:20px;padding:4px 12px;min-width:200px}
+.harta-search input{border:none;background:transparent;font-size:.84rem;outline:none;flex:1;color:#2c3e50}
+.harta-filters{display:flex;gap:8px;align-items:center;font-size:.78rem;color:var(--muted)}
+.harta-filters label{display:flex;align-items:center;gap:4px;cursor:pointer;white-space:nowrap}
+.harta-act-btn{background:#f0f2f5;border:1px solid var(--border);border-radius:5px;padding:4px 10px;cursor:pointer;font-size:.75rem;color:var(--muted)}
+.harta-act-btn:hover{background:#e0e6ef}
+.harta-legend{display:flex;gap:10px;align-items:center;font-size:.72rem;color:var(--muted);margin-left:auto;flex-wrap:wrap}
+.hl-item{display:flex;align-items:center;gap:4px;white-space:nowrap}
+.hl-dot{width:10px;height:10px;border-radius:50%;display:inline-block;flex-shrink:0}
+#harta-canvas{flex:1;position:relative;overflow:hidden;background:#f8faff;cursor:grab}
+#harta-canvas:active{cursor:grabbing}
+#harta-svg{width:100%;height:100%}
+.hnode{cursor:pointer}
+.hnode rect{stroke-width:1.5}
+.hnode:hover rect{filter:brightness(.9)}
+.hnode.dimmed{opacity:.12;pointer-events:none}
+.hnode.highlighted rect{stroke-width:2.5;filter:drop-shadow(0 0 5px rgba(0,0,0,.3))}
+.hlink{pointer-events:none}
+.hlink.dimmed{opacity:.05}
+#harta-minimap{position:absolute;bottom:12px;right:12px;width:160px;height:100px;background:rgba(255,255,255,.94);border:1px solid var(--border);border-radius:6px;overflow:hidden;box-shadow:0 2px 10px rgba(0,0,0,.1)}
+#harta-search-results{display:none;position:absolute;top:44px;left:14px;background:#fff;border:1px solid var(--border);border-radius:7px;box-shadow:0 4px 18px rgba(0,0,0,.13);max-height:260px;overflow-y:auto;min-width:300px;z-index:30}
+.hsr-item{padding:8px 12px;cursor:pointer;font-size:.8rem;border-bottom:1px solid #f0f2f5;display:flex;align-items:center;gap:8px}
+.hsr-item:hover{background:#eef5ff}
+.hsr-item:last-child{border-bottom:none}
+.hsr-type{font-size:.68rem;padding:1px 6px;border-radius:3px;background:#f0f2f5;color:var(--muted);flex-shrink:0;font-weight:600}
+.hsr-title{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.hsr-empty{padding:14px;color:var(--muted);font-size:.8rem;text-align:center}
+.harta-stats{font-size:.72rem;color:var(--muted)}
+
+/* ── UC MATRIX ──────────────────────────────────────────────── */
+.mtx-wrap{overflow:auto;background:#fff;border-radius:7px;border:1px solid var(--border);flex:1}
+.mtx{border-collapse:collapse;min-width:100%;font-size:.78rem}
+.mtx th{background:#f8f9fa;padding:7px 10px;border:1px solid var(--border);font-weight:600;white-space:nowrap;position:sticky;top:0;z-index:2}
+.mtx th.ch{text-align:center;min-width:82px}
+.mtx td{padding:5px 7px;border:1px solid var(--border);vertical-align:top}
+.uc-hdr{white-space:nowrap;position:sticky;left:0;background:#fff;z-index:1;min-width:190px;cursor:pointer}
+.uc-hdr:hover{background:#f8f9fa}
+.uc-cod{font-weight:700;font-size:.83rem}
+.uc-short{color:var(--muted);font-size:.72rem;display:block;max-width:170px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mcell{cursor:default;min-height:22px}
+.mcell.has{background:#fff}
+.mcell.empty{background:#fafafa}
+.chip{display:inline-block;padding:2px 5px;margin:1px;border-radius:3px;font-size:.7rem;cursor:pointer;white-space:nowrap}
+.chip.dig{background:#e8f8f5;color:#16a085}.chip.dig:hover{background:#d0ede7}
+.chip.tehn{background:#fdf2e9;color:#c0392b}.chip.tehn:hover{background:#f9e0cf}
+.grp-sep td{background:linear-gradient(90deg,#f0f2f5 40%,transparent);font-weight:700;font-size:.78rem;padding:4px 8px;color:var(--muted)}
+.cs1-r .uc-cod{color:var(--cs1)}.cs2-r .uc-cod{color:var(--cs2)}.cs3-r .uc-cod{color:var(--cs3)}.cs4-r .uc-cod{color:var(--cs4)}
+
+/* ── UINV TABLE ─────────────────────────────────────────────── */
+.utable{border-collapse:collapse;min-width:100%;font-size:.82rem}
+.utable th{background:#f8f9fa;padding:7px 12px;border:1px solid var(--border);font-weight:600;position:sticky;top:0;z-index:1}
+.utable td{padding:6px 11px;border:1px solid var(--border);vertical-align:middle}
+.utable tr:hover td{background:#f8fafc;cursor:pointer}
+.utable tr.expanded td{background:#f0f7ff}
+.cls-circle{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;background:#eaf2ff;color:#2471a3;font-weight:700;font-size:.78rem}
+.uc-chip{display:inline-block;background:#fef9e7;color:#d68910;border-radius:3px;padding:1px 5px;margin:1px;font-size:.7rem;font-weight:600}
+.ndv-badge{border-radius:10px;padding:2px 8px;font-size:.7rem;font-weight:600;background:var(--ndvc,#f0f2f5);color:var(--ndvt,var(--muted))}
+.uinv-expand-row td{background:#f8fafc;padding:10px 14px;font-size:.78rem}
+.uinv-expand-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.uinv-expand-h{font-size:.7rem;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);font-weight:700;margin-bottom:5px}
+.uinv-expand-ol{margin:0 0 0 14px;padding:0;line-height:1.6}
+
+/* ── D3 GRAPH ───────────────────────────────────────────────── */
+.gctrls{width:210px;min-width:210px;background:#fff;border-right:1px solid var(--border);padding:14px;overflow-y:auto;display:flex;flex-direction:column;gap:14px;flex-shrink:0}
+.gctrls h4{font-size:.82rem;font-weight:700;margin-bottom:4px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted)}
+.chk-grp{display:flex;flex-direction:column;gap:5px}
+.chk-grp label{display:flex;align-items:center;gap:6px;font-size:.8rem;cursor:pointer}
+#graph-canvas{flex:1;overflow:hidden;background:#fafafa;position:relative}
+svg#fg{width:100%;height:100%}
+.gnode{cursor:pointer}
+.gnode circle{transition:r .15s;stroke:#fff;stroke-width:2}
+.gnode:hover circle{opacity:.8}
+.gnode text{pointer-events:none;fill:#2c3e50}
+.glink{stroke-opacity:.45}
+.leg{display:flex;flex-direction:column;gap:5px}
+.leg-item{display:flex;align-items:center;gap:7px;font-size:.76rem}
+.leg-dot{width:11px;height:11px;border-radius:50%;flex-shrink:0}
+.leg-line{width:22px;height:2px;flex-shrink:0}
+
+/* ── EXPLORER ───────────────────────────────────────────────── */
+.exp-grid{flex:1;overflow-y:auto;display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:9px;align-content:start}
+.ncard{background:#fff;border:1px solid var(--border);border-radius:7px;padding:11px;cursor:pointer;transition:box-shadow .12s,border-color .12s}
+.ncard:hover{box-shadow:0 2px 10px rgba(0,0,0,.1);border-color:var(--accent)}
+.ncard-title{font-size:.83rem;font-weight:600;margin-bottom:5px;line-height:1.35}
+.ncard-sum{font-size:.76rem;color:var(--muted);line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.ncard-meta{margin-top:7px;display:flex;flex-wrap:wrap;gap:2px}
+
+/* ── MISC ───────────────────────────────────────────────────── */
+.empty-state{text-align:center;padding:40px;color:var(--muted);grid-column:1/-1}
+#loading{position:fixed;inset:0;background:rgba(44,62,80,.75);display:flex;align-items:center;justify-content:center;z-index:100;color:#fff;font-size:1rem;flex-direction:column;gap:8px}
+#loading.hidden{display:none}
+#no-data{display:none;position:fixed;inset:0;background:rgba(44,62,80,.85);z-index:100;align-items:center;justify-content:center;color:#fff;text-align:center;flex-direction:column;gap:10px;font-size:.95rem}
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-thumb{background:#bdc3c7;border-radius:3px}
+</style>
+</head>
+<body>
+
+<div id="loading"><div style="font-size:1.6rem">⟳</div><div>Se încarcă datele curriculumului…</div></div>
+<div id="no-data" style="display:none">
+  <div style="font-size:2rem">⚠</div>
+  <div><strong>data.js lipsește.</strong></div>
+  <div style="font-size:.85rem;color:#bdc3c7">Rulați mai întâi <code>.\extract-data.ps1</code> din folderul curriculum-viewer.</div>
+</div>
+
+<header>
+  <div style="display:flex;align-items:center">
+    <h1>Curriculum Viewer</h1>
+    <span class="hdr-sub">Educație Tehnologică și TIC</span>
+  </div>
+  <div class="hdr-meta" id="hdr-meta"></div>
+</header>
+
+<!-- GLOBAL FILTER BAR -->
+<div class="gfilter" id="gfilter">
+  <div class="gfilter-search">
+    <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><circle cx="6.5" cy="6.5" r="5.5"/><path d="M11 11l3.5 3.5"/></svg>
+    <input type="text" id="gsearch" placeholder="Caută în tot curriculumul…" autocomplete="off">
+  </div>
+  <button class="tag-toggle-btn" id="tag-toggle-btn" onclick="toggleTagCloud()">🏷 Taguri</button>
+  <div class="active-tags-bar" id="active-tags-bar"></div>
+  <div class="gf-stats" id="gf-stats"></div>
+  <!-- Tag cloud dropdown -->
+  <div class="tag-cloud-wrap" id="tag-cloud-wrap"></div>
+</div>
+
+<nav class="tabs">
+  <button class="tab-btn active" data-view="view-progress">📊 Progresie</button>
+  <button class="tab-btn" data-view="view-tree">🗺 Hartă</button>
+  <button class="tab-btn" data-view="view-uc">Matrice UC × Clase</button>
+  <button class="tab-btn" data-view="view-ucon">Unități de Învățare</button>
+  <button class="tab-btn" data-view="view-graph">Graf Curriculum</button>
+  <button class="tab-btn" data-view="view-exp">Explorer</button>
+</nav>
+
+<div class="app-body">
+
+<!-- ── VIEW 1: PROGRESIE ─────────────────────────────────────── -->
+<section class="view active" id="view-progress">
+  <div class="toolbar">
+    <label>Componentă</label>
+    <select id="prog-comp">
+      <option value="all">Ambele</option>
+      <option value="tic">Digital TIC</option>
+      <option value="et">Educație Tehnologică</option>
+    </select>
+    <label>CS</label>
+    <select id="prog-cs">
+      <option value="all">Toate</option>
+      <option value="1">CS 1</option><option value="2">CS 2</option>
+      <option value="3">CS 3</option><option value="4">CS 4</option>
+    </select>
+    <span style="font-size:.73rem;color:var(--muted);margin-left:4px">Click pe chip → extinde conținut &nbsp;|&nbsp; Click pe rând UC → detalii</span>
+    <div class="cnt-lbl" id="prog-stats"></div>
+  </div>
+  <div class="prog-wrap" id="prog-wrap"></div>
+</section>
+
+<!-- ── VIEW 2: HARTĂ CURRICULUM ──────────────────────────────── -->
+<section class="view" id="view-tree" style="padding:0;flex-direction:column">
+  <div class="harta-bar">
+    <div class="harta-search">
+      <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><circle cx="6.5" cy="6.5" r="5.5"/><path d="M11 11l3.5 3.5"/></svg>
+      <input type="text" id="harta-q" placeholder="Caută nod (CS, UC, UInv, noțiuni…)" autocomplete="off">
+    </div>
+    <div class="harta-filters">
+      <label>CS</label>
+      <select id="harta-cs" style="padding:3px 8px;border:1px solid var(--border);border-radius:4px;font-size:.8rem">
+        <option value="all">Toate</option>
+        <option value="1">CS 1</option><option value="2">CS 2</option>
+        <option value="3">CS 3</option><option value="4">CS 4</option>
+      </select>
+      <label><input type="checkbox" id="hg-ul" checked> UInv</label>
+      <label><input type="checkbox" id="hg-fin"> Finalități</label>
+    </div>
+    <div style="display:flex;gap:5px">
+      <button class="harta-act-btn" id="harta-fit">⊞ Potrivire</button>
+      <button class="harta-act-btn" id="harta-reset">↺ Resetează</button>
+    </div>
+    <div class="harta-legend">
+      <span class="hl-item"><span class="hl-dot" style="background:#3b82f6"></span>Consists Of</span>
+      <span class="hl-item"><span class="hl-dot" style="background:#a78bfa"></span>Part Of</span>
+      <span class="hl-item"><span class="hl-dot" style="background:#f59e0b"></span>Expects</span>
+    </div>
+    <div class="harta-stats" id="harta-stats"></div>
+  </div>
+  <div id="harta-canvas">
+    <svg id="harta-svg"></svg>
+    <div id="harta-minimap"><svg id="harta-mm-svg" style="width:100%;height:100%"></svg></div>
+    <div id="harta-search-results"></div>
+  </div>
+</section>
+
+<!-- ── VIEW 3: UC MATRIX ─────────────────────────────────────── -->
+<section class="view" id="view-uc">
+  <div class="toolbar">
+    <label>Componentă</label>
+    <select id="uc-comp"><option value="all">Ambele</option><option value="tic">Digital TIC</option><option value="et">Educație Tehnologică</option></select>
+    <label>CS</label>
+    <select id="uc-cs"><option value="all">Toate CS</option><option value="1">CS 1</option><option value="2">CS 2</option><option value="3">CS 3</option><option value="4">CS 4</option></select>
+    <span style="font-size:.73rem;color:var(--muted);margin-left:auto">Click chip → detalii UInv &nbsp;|&nbsp; Click rând → detalii UC</span>
+  </div>
+  <div class="mtx-wrap" id="uc-wrap"></div>
+</section>
+
+<!-- ── VIEW 4: UINV TABLE ────────────────────────────────────── -->
+<section class="view" id="view-ucon">
+  <div class="toolbar">
+    <label>Caută</label>
+    <input type="text" id="uc2-q" placeholder="titlu, cod…">
+    <label>Clasă</label>
+    <select id="uc2-cls"><option value="all">Toate</option>
+      <option value="1">I</option><option value="2">II</option><option value="3">III</option>
+      <option value="4">IV</option><option value="5">V</option><option value="6">VI</option>
+      <option value="7">VII</option><option value="8">VIII</option><option value="9">IX</option>
+    </select>
+    <label>Comp.</label>
+    <select id="uc2-comp"><option value="all">Ambele</option><option value="tic">TIC</option><option value="et">ET</option></select>
+    <label>CS</label>
+    <select id="uc2-cs"><option value="all">Toate</option><option value="1">CS 1</option><option value="2">CS 2</option><option value="3">CS 3</option><option value="4">CS 4</option></select>
+    <span class="cnt-lbl" id="uc2-cnt"></span>
+  </div>
+  <div class="mtx-wrap">
+    <table class="utable" id="utable">
+      <thead><tr><th>Cls.</th><th>Comp.</th><th>Titlu</th><th>Nivel</th><th>CS</th><th>UC asociate</th></tr></thead>
+      <tbody id="utbody"></tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ── VIEW 5: D3 GRAPH ──────────────────────────────────────── -->
+<section class="view" id="view-graph" style="flex-direction:row;padding:0">
+  <div class="gctrls">
+    <div>
+      <h4>Noduri</h4>
+      <div class="chk-grp">
+        <label><input type="checkbox" id="g-cs" checked><span style="color:#e74c3c">●</span> Competențe (CS)</label>
+        <label><input type="checkbox" id="g-uc" checked><span style="color:#f39c12">●</span> Unități competență (UC)</label>
+        <label><input type="checkbox" id="g-ucon"><span style="color:#3498db">●</span> Unități de Învățare (UInv)</label>
+        <label><input type="checkbox" id="g-finalitati"><span style="color:#8e44ad">●</span> Finalitățile învățării</label>
+        <label><input type="checkbox" id="g-con"><span style="color:#95a5a6">●</span> Concepția disciplinei</label>
+      </div>
+    </div>
+    <div>
+      <h4>Componentă</h4>
+      <div class="chk-grp">
+        <label><input type="checkbox" id="g-tic" checked> Digital TIC</label>
+        <label><input type="checkbox" id="g-et" checked> Educație Tehnologică</label>
+        <label><input type="checkbox" id="g-comun" checked> Comun</label>
+      </div>
+    </div>
+    <div>
+      <h4>Legendă tipuri</h4>
+      <div class="leg">
+        <div class="leg-item"><div class="leg-dot" style="background:#e74c3c"></div>CS</div>
+        <div class="leg-item"><div class="leg-dot" style="background:#16a085"></div>UC Digital</div>
+        <div class="leg-item"><div class="leg-dot" style="background:#d35400"></div>UC Tehnologic</div>
+        <div class="leg-item"><div class="leg-dot" style="background:#3498db"></div>UInv Digital</div>
+        <div class="leg-item"><div class="leg-dot" style="background:#e74c3c;opacity:.45"></div>UInv Tehn.</div>
+        <div class="leg-item"><div class="leg-dot" style="background:#8e44ad"></div>Finalități</div>
+        <div class="leg-item"><div class="leg-dot" style="background:#95a5a6"></div>Concepție</div>
+      </div>
+    </div>
+    <div>
+      <h4>Legendă relații</h4>
+      <div class="leg">
+        <div class="leg-item"><div class="leg-line" style="background:#27ae60"></div>Consists Of</div>
+        <div class="leg-item"><div class="leg-line" style="background:#2980b9;border-bottom:2px dashed #2980b9;height:0;margin:6px 0"></div>Expects</div>
+      </div>
+    </div>
+    <button id="g-reset" style="margin-top:auto;padding:7px;border:1px solid var(--border);border-radius:5px;cursor:pointer;background:#fff;font-size:.8rem">↺ Resetează zoom</button>
+  </div>
+  <div id="graph-canvas"><svg id="fg"></svg></div>
+</section>
+
+<!-- ── VIEW 6: EXPLORER ──────────────────────────────────────── -->
+<section class="view" id="view-exp">
+  <div class="toolbar">
+    <label>Caută</label>
+    <input type="text" id="eq" placeholder="titlu, cod, descriere, noțiuni…">
+    <label>Tip</label>
+    <select id="et2"><option value="all">Toate</option><option value="cs">CS</option><option value="uc">UC</option><option value="ul">UInv</option><option value="finalitati">Finalități</option><option value="conceptie">Concepție</option></select>
+    <label>Comp.</label>
+    <select id="ec"><option value="all">Toate</option><option value="tic">TIC</option><option value="et">ET</option><option value="comun">Comun</option></select>
+    <label>Clasă</label>
+    <select id="ecls"><option value="all">Toate</option>
+      <option value="1">I</option><option value="2">II</option><option value="3">III</option>
+      <option value="4">IV</option><option value="5">V</option><option value="6">VI</option>
+      <option value="7">VII</option><option value="8">VIII</option><option value="9">IX</option>
+    </select>
+    <label>CS</label>
+    <select id="ecs"><option value="all">Toate</option><option value="1">CS 1</option><option value="2">CS 2</option><option value="3">CS 3</option><option value="4">CS 4</option></select>
+    <span class="cnt-lbl" id="ecnt"></span>
+  </div>
+  <div class="exp-grid" id="exp-grid"></div>
+</section>
+
+<!-- ── DETAIL PANEL ──────────────────────────────────────────── -->
+<aside id="detail-panel">
+  <div class="dp-head">
+    <h3 id="dp-title">—</h3>
+    <button class="dp-close" id="dp-close" title="Închide">✕</button>
+  </div>
+  <div class="dp-body" id="dp-body"></div>
+</aside>
+
+</div><!-- .app-body -->
+
+<script src="https://d3js.org/d3.v7.min.js"></script>
+<script src="data.js" onerror="document.getElementById('no-data').style.display='flex';document.getElementById('loading').classList.add('hidden')"></script>
+<script>
+// ═══════════════════════════════════════════════════════
+// CONSTANTS
+// ═══════════════════════════════════════════════════════
+const ROMAN  = ['I','II','III','IV','V','VI','VII','VIII','IX'];
+const CS_COL = {1:'#27ae60',2:'#2980b9',3:'#e67e22',4:'#8e44ad'};
+
+function ndvClass(s){
+  if(!s)return '';
+  // Normalize diacritics for comparison
+  const n=s.toLowerCase().replace(/[ăâ]/g,'a').replace(/[îí]/g,'i').replace(/[șş]/g,'s').replace(/[țţ]/g,'t');
+  if(n.startsWith('ini'))return 'ndv-initiere';
+  if(n.startsWith('fam'))return 'ndv-familiarizare';
+  if(n.startsWith('con'))return 'ndv-consolidare';
+  if(n.startsWith('apo')||n.startsWith('apl'))return 'ndv-aprofundare';
+  if(n.startsWith('dez'))return 'ndv-dezvoltare';
+  if(n.startsWith('sin'))return 'ndv-sinteza';
+  if(n.startsWith('tra'))return 'ndv-tranzitie';
+  return '';
+}
+
+// ═══════════════════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════════════════
+let DATA = null;
+let nmap = {}, lBySrc = {}, lByTgt = {};
+let ucByUcCls = {};
+let globalQ = '';
+let activeTags = new Set();
+let simRef = null, svgRef = null;
+
+// ═══════════════════════════════════════════════════════
+// BOOT
+// ═══════════════════════════════════════════════════════
+window.addEventListener('DOMContentLoaded', () => {
+  if(!window.CURRICULUM_DATA) return;
+  document.getElementById('loading').classList.add('hidden');
+  DATA = window.CURRICULUM_DATA;
+
+  DATA.nodes.forEach(n => {
+    n.cs    = toNumArray(n.cs);
+    n.tags  = Array.isArray(n.tags) ? n.tags : [];
+    n.continut   = Array.isArray(n.continut) ? n.continut : [];
+    n.notiuninoi = Array.isArray(n.notiuninoi) ? n.notiuninoi : [];
+    if(n.class !== 'toate') n.class = toNumArray(n.class);
+  });
+
+  buildMaps();
+  buildTagCloud();
+  updateStats();
+
+  const totUl  = DATA.nodes.filter(n=>n.type==='ul').length;
+  const withCon= DATA.nodes.filter(n=>n.type==='ul'&&n.continut.length>0).length;
+  const withNot= DATA.nodes.filter(n=>n.type==='ul'&&n.notiuninoi.length>0).length;
+  document.getElementById('hdr-meta').textContent =
+    `${DATA.nodes.length} noduri · ${totUl} UInv · ${withCon} cu conținut · ${withNot} cu noțiuni noi`;
+
+  setupTabs();
+  setupGlobalSearch();
+  renderProgression();
+  renderUConTable();
+  initGraph();
+  renderExplorer();
+});
+
+function toNumArray(v){
+  if(Array.isArray(v)) return v.map(Number);
+  if(v===null||v===undefined||v==='') return [];
+  return [Number(v)];
+}
+
+// ═══════════════════════════════════════════════════════
+// DATA MAPS
+// ═══════════════════════════════════════════════════════
+function buildMaps(){
+  DATA.nodes.forEach(n => { nmap[n.id]=n; lBySrc[n.id]=[]; lByTgt[n.id]=[]; });
+  DATA.links.forEach(l => {
+    if(lBySrc[l.source]) lBySrc[l.source].push(l);
+    if(lByTgt[l.target]) lByTgt[l.target].push(l);
+  });
+  DATA.nodes.filter(n=>n.type==='ul').forEach(u => {
+    const classes = Array.isArray(u.class) ? u.class : [];
+    (lBySrc[u.id]||[]).filter(l=>l.type==='Consists Of').forEach(l => {
+      classes.forEach(cls => {
+        const k = l.target+'_'+cls;
+        if(!ucByUcCls[k]) ucByUcCls[k]=[];
+        ucByUcCls[k].push(u.id);
+      });
+    });
+  });
+}
+
+// ═══════════════════════════════════════════════════════
+// GLOBAL FILTER (search + tags)
+// ═══════════════════════════════════════════════════════
+function nodeMatchesGlobal(n){
+  if(globalQ){
+    const hay=[n.title,n.cod,n.summary||'',
+               ...n.continut,...n.notiuninoi,...n.tags].join(' ').toLowerCase();
+    if(!hay.includes(globalQ)) return false;
+  }
+  if(activeTags.size>0){
+    const nt=new Set(n.tags);
+    for(const t of activeTags) if(!nt.has(t)) return false;
+  }
+  return true;
+}
+
+function setupGlobalSearch(){
+  const inp = document.getElementById('gsearch');
+  let timer;
+  inp.addEventListener('input', ()=>{
+    clearTimeout(timer);
+    timer = setTimeout(()=>{
+      globalQ = inp.value.trim().toLowerCase();
+      onFilterChange();
+    }, 220);
+  });
+}
+
+function onFilterChange(){
+  updateStats();
+  const activeView = document.querySelector('.tab-btn.active')?.dataset?.view;
+  if(activeView==='view-progress') renderProgression();
+  else if(activeView==='view-tree') updateHartaFilter();
+  else if(activeView==='view-ucon') filterUCons();
+  else if(activeView==='view-exp') filterExplorer();
+}
+
+function updateStats(){
+  const visible = DATA ? DATA.nodes.filter(nodeMatchesGlobal).length : 0;
+  const total   = DATA ? DATA.nodes.length : 0;
+  document.getElementById('gf-stats').textContent =
+    (globalQ||activeTags.size) ? `${visible} / ${total} noduri` : `${total} noduri`;
+}
+
+// ── TAG CLOUD ──────────────────────────────────────────
+let allTagsList = [];
+let tagCloudOpen = false;
+
+function buildTagCloud(){
+  const counts = {};
+  DATA.nodes.forEach(n => n.tags.forEach(t => { counts[t]=(counts[t]||0)+1; }));
+  allTagsList = Object.entries(counts).sort((a,b)=>b[1]-a[1]);
+  renderTagCloud();
+}
+
+function toggleTagCloud(){
+  tagCloudOpen = !tagCloudOpen;
+  const wrap = document.getElementById('tag-cloud-wrap');
+  wrap.classList.toggle('open', tagCloudOpen);
+  if(tagCloudOpen) renderTagCloud();
+}
+
+// Close tag cloud when clicking outside
+document.addEventListener('click', e => {
+  if(tagCloudOpen && !document.getElementById('gfilter').contains(e.target)){
+    tagCloudOpen=false;
+    document.getElementById('tag-cloud-wrap').classList.remove('open');
+  }
+});
+
+function renderTagCloud(){
+  const wrap = document.getElementById('tag-cloud-wrap');
+  wrap.innerHTML = '';
+
+  const groups = {'tip':[],'comp':[],'clasa':[],'ciclu':[],'cs':[],'altele':[]};
+  allTagsList.forEach(([tag,cnt]) => {
+    const pref = tag.split('/')[0];
+    const g = groups[pref] || groups['altele'];
+    g.push([tag,cnt]);
+  });
+
+  const labels = {tip:'Tip',comp:'Componentă',clasa:'Clasă',ciclu:'Ciclu',cs:'Competență specifică',altele:'Altele'};
+  Object.entries(groups).forEach(([key,items]) => {
+    if(!items.length) return;
+    const lbl = document.createElement('div');
+    lbl.className = 'tag-group-lbl';
+    lbl.textContent = labels[key]||key;
+    wrap.appendChild(lbl);
+    const grp = document.createElement('div');
+    grp.className = 'tag-group';
+    items.forEach(([tag,cnt]) => {
+      const ch = document.createElement('span');
+      ch.className = 'tc-chip' + (activeTags.has(tag)?' active':'');
+      ch.textContent = `${tag} (${cnt})`;
+      ch.addEventListener('click', e => { e.stopPropagation(); toggleTag(tag); });
+      grp.appendChild(ch);
+    });
+    wrap.appendChild(grp);
+  });
+}
+
+function toggleTag(tag){
+  if(activeTags.has(tag)) activeTags.delete(tag);
+  else activeTags.add(tag);
+  renderTagCloud();
+  renderActiveTagChips();
+  const btn = document.getElementById('tag-toggle-btn');
+  btn.classList.toggle('has-active', activeTags.size>0);
+  onFilterChange();
+}
+
+function renderActiveTagChips(){
+  const bar = document.getElementById('active-tags-bar');
+  bar.innerHTML = '';
+  activeTags.forEach(tag => {
+    const ch = document.createElement('span');
+    ch.className = 'atag';
+    ch.innerHTML = `${tag} <button onclick="event.stopPropagation();toggleTag('${tag.replace(/'/g,"\\'")}')">×</button>`;
+    bar.appendChild(ch);
+  });
+}
+
+// ═══════════════════════════════════════════════════════
+// TABS
+// ═══════════════════════════════════════════════════════
+function setupTabs(){
+  document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+      document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById(btn.dataset.view).classList.add('active');
+      if(btn.dataset.view==='view-graph') setTimeout(updateGraph,30);
+      else if(btn.dataset.view==='view-progress') renderProgression();
+      else if(btn.dataset.view==='view-tree') setTimeout(renderHarta,30);
+    });
+  });
+}
+
+// ═══════════════════════════════════════════════════════
+// VIEW 1 — PROGRESSION
+// ═══════════════════════════════════════════════════════
+function getProgUCs(){
+  const comp = document.getElementById('prog-comp').value;
+  const csF  = document.getElementById('prog-cs').value;
+  return DATA.nodes.filter(n => {
+    if(n.type!=='uc') return false;
+    if(comp!=='all'&&n.component!==comp) return false;
+    if(csF!=='all'&&!n.cs.includes(+csF)) return false;
+    return true;
+  }).sort((a,b)=>{
+    const ca=a.cs[0]||0,cb=b.cs[0]||0;
+    if(ca!==cb) return ca-cb;
+    if(a.component!==b.component) return a.component==='tic'?-1:1;
+    return a.cod.localeCompare(b.cod,'ro');
+  });
+}
+
+function ucHasMatch(ucId){
+  if(!globalQ&&!activeTags.size) return true;
+  for(let cls=1;cls<=9;cls++){
+    const ids=ucByUcCls[ucId+'_'+cls]||[];
+    for(const uid of ids){ if(nmap[uid]&&nodeMatchesGlobal(nmap[uid])) return true; }
+  }
+  return false;
+}
+
+function renderProgression(){
+  const ucs = getProgUCs();
+  const finalitati = DATA.nodes.filter(n=>n.type==='finalitati')
+    .sort((a,b)=>(Array.isArray(a.class)?a.class[0]:0)-(Array.isArray(b.class)?b.class[0]:0));
+
+  const wrap = document.getElementById('prog-wrap');
+  const table = document.createElement('table');
+  table.className = 'prog-table';
+
+  // Header row
+  const thead = table.createTHead();
+  const hr = thead.insertRow();
+  const th0 = document.createElement('th');
+  th0.className = 'prog-uc-hdr';
+  th0.textContent = 'Unitate de Competență';
+  hr.appendChild(th0);
+  ROMAN.forEach(r => {
+    const th = document.createElement('th');
+    th.className = 'prog-cls-hdr';
+    th.textContent = 'Cls. '+r;
+    hr.appendChild(th);
+  });
+
+  const tbody = table.createTBody();
+  let lastCS = '';
+  let visUCCount = 0;
+
+  ucs.forEach(uc => {
+    const csNum = uc.cs[0]||0;
+    const isFiltered = !ucHasMatch(uc.id);
+
+    // CS group separator
+    if(csNum+'' !== lastCS) {
+      lastCS = csNum+'';
+      const sep = tbody.insertRow();
+      sep.className = 'prog-sep';
+      const td = sep.insertCell();
+      td.colSpan = 10;
+      td.style.background = `linear-gradient(90deg,${CS_COL[csNum]+'22'} 0%,transparent 60%)`;
+      td.innerHTML = `<div class="prog-sep-inner"><span class="cs-badge-pill cs${csNum}p">CS ${csNum}</span><span style="font-size:.82rem;color:${CS_COL[csNum]}">${(DATA.nodes.find(n=>n.type==='cs'&&n.cs.includes(csNum))||{}).title||''}</span></div>`;
+    }
+
+    if(!isFiltered) visUCCount++;
+    const row = tbody.insertRow();
+    row.className = `comp-${uc.component}` + (isFiltered?' prog-nomatch':'');
+
+    // UC label cell
+    const lbl = row.insertCell();
+    lbl.className = 'prog-lbl-cell';
+    lbl.addEventListener('click', ()=>showDetail(uc.id));
+    lbl.innerHTML = `<div style="display:flex;align-items:flex-start;gap:5px"><span class="prog-uc-dot ${uc.component}"></span><div><div class="uc-cod-s">${uc.cod}</div><span class="uc-ttl-s">${uc.title.replace(uc.cod+' - ','')}</span></div></div>`;
+
+    // Class cells
+    for(let cls=1;cls<=9;cls++){
+      const td = row.insertCell();
+      td.className = 'prog-cell';
+      const uinvIds = ucByUcCls[uc.id+'_'+cls]||[];
+      if(!uinvIds.length){ td.classList.add('prog-empty'); continue; }
+      uinvIds.forEach(uid => {
+        const un = nmap[uid];
+        if(!un) return;
+        const matches = nodeMatchesGlobal(un);
+        const ndc = ndvClass(un.niveldezv);
+        const chip = document.createElement('div');
+        chip.className = 'prog-chip'+(ndc?' '+ndc:'')+(matches?'':' prog-nomatch');
+        chip.dataset.uid = uid;
+        const shortCode = uid.replace(/^(?:DIG|TEHN)\s+(?:IX|VIII|VII|VI|IV|V|III|II|I)\s+/,'').replace(/\s*-.*$/,'');
+        chip.innerHTML = `<span class="prog-chip-code">${shortCode}</span>`+
+          (un.niveldezv?`<span class="ndv-pill-sm">${un.niveldezv}</span>`:'');
+        chip.title = un.title;
+        chip.addEventListener('click', e=>{ e.stopPropagation(); toggleProgExpand(chip,uid); });
+        td.appendChild(chip);
+      });
+    }
+  });
+
+  // Finalitati row
+  if(finalitati.length){
+    const finSep = tbody.insertRow();
+    finSep.className = 'prog-sep';
+    const fs = finSep.insertCell(); fs.colSpan=10;
+    fs.style.background='linear-gradient(90deg,#e9d5ff55 0%,transparent 60%)';
+    fs.innerHTML='<div class="prog-sep-inner"><span class="fin-badge-pill">Finalitățile învățării per clasă</span></div>';
+
+    const finRow = tbody.insertRow();
+    finRow.className = 'prog-final-row';
+    const finLbl = finRow.insertCell();
+    finLbl.className = 'prog-lbl-cell';
+    finLbl.innerHTML = '<div style="font-size:.76rem;color:var(--muted);font-style:italic">Per clasă</div>';
+
+    for(let cls=1;cls<=9;cls++){
+      const td = finRow.insertCell();
+      td.className = 'prog-cell';
+      const fin = finalitati.find(f=>Array.isArray(f.class)&&f.class.includes(cls));
+      if(fin){
+        const chip = document.createElement('div');
+        chip.className = 'prog-chip fin-chip';
+        chip.textContent = 'Cl. '+ROMAN[cls-1];
+        chip.title = fin.title;
+        chip.addEventListener('click', e=>{ e.stopPropagation(); showDetail(fin.id); });
+        td.appendChild(chip);
+      } else {
+        td.classList.add('prog-empty');
+      }
+    }
+  }
+
+  wrap.innerHTML='';
+  wrap.appendChild(table);
+
+  const total = ucs.length;
+  document.getElementById('prog-stats').textContent =
+    (globalQ||activeTags.size) ? `${visUCCount}/${total} UC vizibile` : `${total} UC`;
+}
+
+function toggleProgExpand(chipEl, uid){
+  const existing = chipEl.nextElementSibling;
+  // If already expanded this chip, collapse
+  if(existing&&existing.classList.contains('prog-expand')){
+    existing.remove(); chipEl.classList.remove('active'); return;
+  }
+  // Collapse any other expanded chip in same cell
+  const cell = chipEl.parentElement;
+  cell.querySelectorAll('.prog-expand').forEach(e=>e.remove());
+  cell.querySelectorAll('.prog-chip.active').forEach(c=>c.classList.remove('active'));
+
+  chipEl.classList.add('active');
+  const n = nmap[uid];
+  if(!n) return;
+
+  const exp = document.createElement('div');
+  exp.className = 'prog-expand';
+
+  let html = `<div class="prog-exp-title" onclick="showDetail('${uid.replace(/'/g,"\\'")}');event.stopPropagation()">${n.title}</div>`;
+  if(n.actdom)     html+=`<div class="prog-exp-meta"><b>Acțiune:</b> ${n.actdom}</div>`;
+  if(n.produsfinale) html+=`<div class="prog-exp-meta"><b>Produs:</b> ${n.produsfinale}</div>`;
+
+  if(n.continut.length){
+    html+=`<ol class="prog-continut-ol">${n.continut.map(c=>`<li>${escHtml(c)}</li>`).join('')}</ol>`;
+  } else {
+    html+=`<div class="prog-exp-empty">Unități de conținut: necompletate</div>`;
+  }
+  if(n.notiuninoi.length){
+    html+=`<div class="prog-notiuni-row">${n.notiuninoi.map(t=>`<span class="notiune-tag">${escHtml(t)}</span>`).join('')}</div>`;
+  } else {
+    html+=`<div class="prog-exp-empty">Noțiuni noi: necompletate</div>`;
+  }
+
+  exp.innerHTML = html;
+  chipEl.after(exp);
+}
+
+['prog-comp','prog-cs'].forEach(id=>document.getElementById(id).addEventListener('change',renderProgression));
+
+// ═══════════════════════════════════════════════════════
+// VIEW 2 — HARTĂ CURRICULUM (graf D3 interactiv)
+// ═══════════════════════════════════════════════════════
+let hartaState=null, hartaSim=null, hartaXf=null, hartaLayoutBounds=null;
+const HARTA_Y={cs:80,uc:310,ul:570,finalitati:790};
+
+function getHW(n){return n.type==='cs'?162:n.type==='uc'?136:n.type==='ul'?116:124;}
+function getHH(n){return n.type==='cs'?56:n.type==='uc'?44:n.type==='ul'?38:40;}
+function getHFill(n){
+  if(n.type==='cs'){const c={1:'#27ae60',2:'#2980b9',3:'#e67e22',4:'#8e44ad'};return c[n.cs[0]]||'#555';}
+  if(n.type==='uc') return n.component==='tic'?'#16a085':'#c0392b';
+  if(n.type==='finalitati') return '#ede9fe';
+  const km={'ndv-initiere':'#dbeafe','ndv-familiarizare':'#d1fae5','ndv-consolidare':'#fef3c7','ndv-aprofundare':'#fed7aa','ndv-dezvoltare':'#dcfce7','ndv-sinteza':'#e9d5ff','ndv-tranzitie':'#fce7f3'};
+  return km[ndvClass(n.niveldezv)]||'#f0f2f5';
+}
+function getHStroke(n){
+  if(n.type==='cs') return 'rgba(0,0,0,.22)';
+  if(n.type==='uc') return n.component==='tic'?'#0f6b58':'#902820';
+  if(n.type==='finalitati') return '#7c3aed';
+  const km={'ndv-initiere':'#1e40af','ndv-familiarizare':'#065f46','ndv-consolidare':'#92400e','ndv-aprofundare':'#c2410c','ndv-dezvoltare':'#166534','ndv-sinteza':'#6b21a8','ndv-tranzitie':'#9d174d'};
+  return km[ndvClass(n.niveldezv)]||'#aaa';
+}
+function getHTC(n){
+  if(n.type==='cs'||n.type==='uc') return '#fff';
+  const km={'ndv-initiere':'#1e3a8a','ndv-familiarizare':'#064e3b','ndv-consolidare':'#78350f','ndv-aprofundare':'#9a3412','ndv-dezvoltare':'#14532d','ndv-sinteza':'#581c87','ndv-tranzitie':'#831843'};
+  return km[ndvClass(n.niveldezv)]||'#374151';
+}
+function getHCode(n){
+  if(n.type==='cs') return 'CS '+(n.cs[0]||'?');
+  if(n.type==='uc') return n.cod||n.id;
+  if(n.type==='ul'){
+    const c=Array.isArray(n.class)?ROMAN[n.class[0]-1]:'?';
+    const s=n.id.replace(/^(?:DIG|TEHN)\s+(?:IX|VIII|VII|VI|IV|V|III|II|I)\s+/,'').replace(/\s*-.*/,'');
+    return 'Cl.'+c+' · '+s;
+  }
+  if(n.type==='finalitati'){const c=Array.isArray(n.class)?ROMAN[n.class[0]-1]:'?';return 'Finalit. Cl.'+c;}
+  return (n.cod||n.id).substring(0,20);
+}
+function getHSub(n,mx){
+  const t=(n.title||'').replace(n.cod||'','').replace(/^\s*[-–]\s*/,'').trim();
+  return t.length>mx?t.substring(0,mx-1)+'…':t;
+}
+function getHLStroke(l){
+  if(l.type==='Consists Of') return '#3b82f6';
+  if(l.type==='Part Of') return '#a78bfa';
+  if(l.type==='Expects'||l.type==='Expected By') return '#f59e0b';
+  return '#9ca3af';
+}
+function getHLArr(l){
+  if(l.type==='Consists Of') return 'url(#harr-co)';
+  if(l.type==='Part Of') return 'url(#harr-po)';
+  if(l.type==='Expects') return 'url(#harr-ex)';
+  return null;
+}
+
+function renderHarta(){
+  if(!hartaState) initHarta();
+  else updateHartaFilter();
+}
+
+function initHarta(){
+  const canvas=document.getElementById('harta-canvas');
+  if(!canvas||!DATA) return;
+  const W=canvas.clientWidth||900,H=canvas.clientHeight||600;
+  const svg=d3.select('#harta-svg');
+  svg.selectAll('*').remove();
+
+  const defs=svg.append('defs');
+  [{id:'harr-co',col:'#3b82f6'},{id:'harr-po',col:'#a78bfa'},{id:'harr-ex',col:'#f59e0b'}].forEach(({id,col})=>{
+    defs.append('marker').attr('id',id)
+      .attr('viewBox','0 -5 10 10').attr('refX',12).attr('refY',0)
+      .attr('markerWidth',5).attr('markerHeight',5).attr('orient','auto')
+      .append('path').attr('d','M0,-5L10,0L0,5').attr('fill',col);
+  });
+
+  const g=svg.append('g').attr('id','hg');
+  const bandG=g.append('g').attr('id','hbands');
+  const linkG=g.append('g').attr('id','hl');
+  const nodeG=g.append('g').attr('id','hn');
+  const zoom=d3.zoom().scaleExtent([.04,10])
+    .on('zoom',e=>{g.attr('transform',e.transform);hartaXf=e.transform;drawMinimap();});
+  svg.call(zoom).on('click.clearhl',clearHartaHL);
+
+  document.getElementById('harta-fit').onclick=fitHarta;
+  document.getElementById('harta-reset').onclick=()=>
+    svg.transition().duration(400).call(zoom.transform,d3.zoomIdentity);
+
+  const qi=document.getElementById('harta-q');
+  qi.addEventListener('input',()=>hartaSearch(qi.value.trim().toLowerCase()));
+  document.addEventListener('click',e=>{
+    const res=document.getElementById('harta-search-results');
+    if(res&&!res.contains(e.target)&&e.target!==qi) res.style.display='none';
+  });
+  ['harta-cs','hg-ul','hg-fin'].forEach(id=>{
+    const el=document.getElementById(id);
+    if(el) el.addEventListener('change',rebuildHarta);
+  });
+
+  hartaState={svg,g,bandG,linkG,nodeG,zoom,W,H,nodes:[],links:[]};
+  rebuildHarta();
+}
+
+function computeHierarchicalLayout(nodes,links){
+  const COL_W=155, PAD_L=120;
+  const ROW={cs:50,uc:145,cl1:245,cl2:340,cl3:435,cl4:530,cl5:625,cl6:720,cl7:815,cl8:910,cl9:1005};
+
+  // Sort UC nodes into columns: CS asc, then tic before et, then id
+  const ucNodes=nodes.filter(n=>n.type==='uc').sort((a,b)=>{
+    if((a.cs[0]||0)!==(b.cs[0]||0)) return (a.cs[0]||0)-(b.cs[0]||0);
+    const ca=a.component==='tic'?0:1, cb=b.component==='tic'?0:1;
+    if(ca!==cb) return ca-cb;
+    return a.id.localeCompare(b.id);
+  });
+
+  // Assign X to each UC; add gap between CS groups
+  const ucX={};
+  let cx=PAD_L, prevCS=-1;
+  ucNodes.forEach(uc=>{
+    const cs=uc.cs[0]||0;
+    if(prevCS!==-1&&cs!==prevCS) cx+=60;
+    ucX[uc.id]=cx; cx+=COL_W; prevCS=cs;
+  });
+  const totalW=cx+60;
+
+  // CS X: centered over their UC columns
+  nodes.filter(n=>n.type==='cs').forEach(cs=>{
+    const myUcs=ucNodes.filter(uc=>uc.cs.includes(cs.cs[0]));
+    cs.x=myUcs.length?(ucX[myUcs[0].id]+ucX[myUcs[myUcs.length-1].id])/2:PAD_L;
+    cs.y=ROW.cs;
+  });
+
+  // UC positions
+  ucNodes.forEach(uc=>{uc.x=ucX[uc.id]??PAD_L; uc.y=ROW.uc;});
+
+  // Build UInv→UCs (Consists Of) map
+  const ucIds=new Set(ucNodes.map(n=>n.id));
+  const ulToUcs={};
+  links.forEach(l=>{
+    const src=l.source?.id??l.source, tgt=l.target?.id??l.target;
+    if(nodes.find(n=>n.id===src)?.type==='ul'&&ucIds.has(tgt)){
+      if(!ulToUcs[src]) ulToUcs[src]=[];
+      ulToUcs[src].push(tgt);
+    }
+  });
+  const classToY={1:ROW.cl1,2:ROW.cl2,3:ROW.cl3,4:ROW.cl4,5:ROW.cl5,
+                  6:ROW.cl6,7:ROW.cl7,8:ROW.cl8,9:ROW.cl9};
+
+  // Compute initial X for UInv as avg of covered UC columns
+  nodes.filter(n=>n.type==='ul'||n.type==='finalitati').forEach(n=>{
+    const classNum=Array.isArray(n.class)?n.class[0]:1;
+    n.y=classToY[classNum]??ROW.cl1;
+    if(n.type==='finalitati') n.y+=48;
+    const myUcs=ulToUcs[n.id]||[];
+    if(!myUcs.length){
+      const pcs=Array.isArray(n.cs)?n.cs[0]:1;
+      const csN=nodes.find(m=>m.type==='cs'&&(Array.isArray(m.cs)?m.cs[0]:0)===pcs);
+      n.x=csN?.x??PAD_L;
+    } else {
+      n.x=myUcs.reduce((s,uid)=>s+(ucX[uid]??PAD_L),0)/myUcs.length;
+    }
+  });
+
+  // Resolve collisions in each Y band (min 118px separation)
+  const byY={};
+  nodes.filter(n=>n.type==='ul'||n.type==='finalitati').forEach(n=>{
+    const k=n.y; if(!byY[k]) byY[k]=[]; byY[k].push(n);
+  });
+  Object.values(byY).forEach(grp=>{
+    grp.sort((a,b)=>a.x-b.x);
+    for(let i=1;i<grp.length;i++)
+      if(grp[i].x-grp[i-1].x<118) grp[i].x=grp[i-1].x+118;
+  });
+
+  hartaLayoutBounds={totalW, ROW, classToY, ucNodes, ucX};
+}
+
+function rebuildHarta(){
+  if(!hartaState||!DATA) return;
+  const csF=document.getElementById('harta-cs').value;
+  const showUl=document.getElementById('hg-ul').checked;
+  const showFin=document.getElementById('hg-fin').checked;
+  const vt=new Set(['cs','uc']);
+  if(showUl) vt.add('ul');
+  if(showFin) vt.add('finalitati');
+
+  const rawNodes=DATA.nodes.filter(n=>{
+    if(!vt.has(n.type)) return false;
+    if(csF!=='all'&&n.type!=='cs'&&!n.cs.includes(+csF)) return false;
+    return true;
+  });
+  const ids=new Set(rawNodes.map(n=>n.id));
+  const rawLinks=DATA.links.filter(l=>
+    ids.has(l.source)&&ids.has(l.target)&&
+    (l.type==='Consists Of'||l.type==='Part Of'||l.type==='Expects')
+  );
+
+  const nodes=rawNodes.map(n=>({...n}));
+  const nMap=Object.fromEntries(nodes.map(n=>[n.id,n]));
+  const links=rawLinks.filter(l=>nMap[l.source]&&nMap[l.target])
+    .map(l=>({...l,source:nMap[l.source],target:nMap[l.target]}));
+
+  hartaState.nodes=nodes;
+  hartaState.links=links;
+  renderHartaGraph();
+
+  document.getElementById('harta-stats').textContent=
+    nodes.filter(n=>n.type==='cs').length+' CS · '+
+    nodes.filter(n=>n.type==='uc').length+' UC'+
+    (showUl?' · '+nodes.filter(n=>n.type==='ul').length+' UInv':'')+
+    (showFin?' · '+nodes.filter(n=>n.type==='finalitati').length+' Fin.':'');
+}
+
+function renderHartaGraph(){
+  if(!hartaState) return;
+  const{bandG,linkG,nodeG,nodes,links,svg,zoom}=hartaState;
+  if(hartaSim){hartaSim.stop();hartaSim=null;}
+
+  // Compute deterministic hierarchical layout
+  computeHierarchicalLayout(nodes,links);
+
+  const {ROW,totalW,ucNodes,ucX}=hartaLayoutBounds;
+
+  // Row bands and labels (drawn first, behind everything)
+  bandG.selectAll('*').remove();
+  const BANDS=[
+    {y:ROW.cs,  label:'CS',       col:'rgba(139,92,246,.08)'},
+    {y:ROW.uc,  label:'UC',       col:'rgba(59,130,246,.08)'},
+    {y:ROW.cl1, label:'Cl. I',    col:'rgba(0,0,0,.015)'},
+    {y:ROW.cl2, label:'Cl. II',   col:'rgba(0,0,0,.03)'},
+    {y:ROW.cl3, label:'Cl. III',  col:'rgba(0,0,0,.015)'},
+    {y:ROW.cl4, label:'Cl. IV',   col:'rgba(0,0,0,.03)'},
+    {y:ROW.cl5, label:'Cl. V',    col:'rgba(0,0,0,.015)'},
+    {y:ROW.cl6, label:'Cl. VI',   col:'rgba(0,0,0,.03)'},
+    {y:ROW.cl7, label:'Cl. VII',  col:'rgba(0,0,0,.015)'},
+    {y:ROW.cl8, label:'Cl. VIII', col:'rgba(0,0,0,.03)'},
+    {y:ROW.cl9, label:'Cl. IX',   col:'rgba(0,0,0,.015)'},
+  ];
+  const BH=88;
+  BANDS.forEach(({y,label,col})=>{
+    bandG.append('rect').attr('x',-60).attr('y',y-BH/2)
+      .attr('width',totalW+80).attr('height',BH).attr('fill',col);
+    bandG.append('text').attr('x',-52).attr('y',y+1)
+      .attr('dominant-baseline','middle').attr('text-anchor','start')
+      .attr('font-size',9).attr('font-weight','700').attr('fill','#aaa')
+      .text(label);
+  });
+  // Vertical guide lines at each UC column
+  ucNodes.forEach(uc=>{
+    bandG.append('line')
+      .attr('x1',ucX[uc.id]).attr('y1',ROW.uc+46)
+      .attr('x2',ucX[uc.id]).attr('y2',ROW.cl9+46)
+      .attr('stroke','#d0d7e3').attr('stroke-width',1).attr('stroke-dasharray','3,5');
+  });
+
+  // Links
+  const lSel=linkG.selectAll('.hlink')
+    .data(links,d=>d.source.id+'→'+d.target.id+'|'+d.type)
+    .join('line').attr('class','hlink')
+    .attr('stroke',d=>getHLStroke(d))
+    .attr('stroke-width',d=>d.type==='Part Of'?1:1.5)
+    .attr('stroke-dasharray',d=>d.type==='Expects'?'5,4':d.type==='Part Of'?'3,3':null)
+    .attr('marker-end',d=>getHLArr(d));
+
+  // Nodes
+  const nSel=nodeG.selectAll('.hnode')
+    .data(nodes,d=>d.id)
+    .join(enter=>enter.append('g').attr('class','hnode')
+      .on('click',(e,d)=>{e.stopPropagation();highlightHartaNode(d.id);showDetail(d.id);})
+      .on('mouseenter',(e,d)=>highlightHartaNode(d.id))
+      .on('mouseleave',clearHartaHL)
+      .call(g2=>{g2.append('rect');g2.append('text').attr('class','hcode');g2.append('text').attr('class','hsub');})
+    );
+
+  nSel.each(function(d){
+    const w=getHW(d),h=getHH(d),fi=getHFill(d),st=getHStroke(d),tc=getHTC(d);
+    d3.select(this).select('rect')
+      .attr('width',w).attr('height',h).attr('x',-w/2).attr('y',-h/2)
+      .attr('rx',6).attr('fill',fi).attr('stroke',st);
+    d3.select(this).select('.hcode')
+      .attr('text-anchor','middle').attr('y',h>48?-7:-5)
+      .attr('font-size',d.type==='cs'?10.5:9.5).attr('font-weight','700').attr('fill',tc)
+      .attr('pointer-events','none').text(getHCode(d));
+    d3.select(this).select('.hsub')
+      .attr('text-anchor','middle').attr('y',h>48?9:7)
+      .attr('font-size',8).attr('fill',tc).attr('opacity',.78)
+      .attr('pointer-events','none').text(getHSub(d,Math.floor(w/5)));
+  });
+
+  function applyPositions(){
+    lSel
+      .attr('x1',d=>d.source.x).attr('y1',d=>d.source.y)
+      .attr('x2',d=>{
+        const w=getHW(d.target),dx=d.target.x-d.source.x,dy=d.target.y-d.source.y,len=Math.sqrt(dx*dx+dy*dy)||1;
+        return d.target.x-dx/len*(w/2+4);
+      })
+      .attr('y2',d=>{
+        const h=getHH(d.target),dx=d.target.x-d.source.x,dy=d.target.y-d.source.y,len=Math.sqrt(dx*dx+dy*dy)||1;
+        return d.target.y-dy/len*(h/2+4);
+      });
+    nSel.attr('transform',d=>`translate(${d.x},${d.y})`);
+  }
+
+  applyPositions();
+  if(!hartaXf) fitHarta();
+  drawMinimap();
+
+  // Simple direct drag (no physics, preserves hierarchical rows)
+  const drag=d3.drag()
+    .on('drag',(e,d)=>{d.x=e.x;d.y=e.y;applyPositions();drawMinimap();});
+  nSel.call(drag);
+}
+
+function fitHarta(){
+  if(!hartaState||!hartaState.nodes.length) return;
+  const{svg,zoom,W,H,nodes}=hartaState;
+  const xs=nodes.map(n=>n.x),ys=nodes.map(n=>n.y);
+  const minX=Math.min(...xs)-110,maxX=Math.max(...xs)+110;
+  const minY=Math.min(...ys)-70,maxY=Math.max(...ys)+70;
+  const gW=maxX-minX||1,gH=maxY-minY||1;
+  const k=Math.min(W/gW,H/gH,.95)*.9;
+  const tx=W/2-k*(minX+gW/2),ty=H/2-k*(minY+gH/2);
+  svg.transition().duration(700).call(zoom.transform,d3.zoomIdentity.translate(tx,ty).scale(k));
+}
+
+function drawMinimap(){
+  if(!hartaState||!hartaState.nodes.length) return;
+  const mm=d3.select('#harta-mm-svg'),mmW=160,mmH=100;
+  mm.selectAll('*').remove();
+  const nodes=hartaState.nodes;
+  const xs=nodes.map(n=>n.x),ys=nodes.map(n=>n.y);
+  const minX=Math.min(...xs)-60,maxX=Math.max(...xs)+60;
+  const minY=Math.min(...ys)-40,maxY=Math.max(...ys)+40;
+  const gW=maxX-minX||1,gH=maxY-minY||1;
+  const k=Math.min(mmW/gW,mmH/gH);
+  const ox=(mmW-gW*k)/2-minX*k,oy=(mmH-gH*k)/2-minY*k;
+  nodes.forEach(n=>{
+    const w=Math.max(getHW(n)*k,2),h=Math.max(getHH(n)*k,1);
+    mm.append('rect').attr('x',n.x*k+ox-w/2).attr('y',n.y*k+oy-h/2)
+      .attr('width',w).attr('height',h).attr('rx',1)
+      .attr('fill',getHFill(n)).attr('opacity',.72);
+  });
+  if(hartaXf&&hartaXf.k){
+    const{x:tx,y:ty,k:sc}=hartaXf,{W:cvW,H:cvH}=hartaState;
+    mm.append('rect')
+      .attr('x',(-tx/sc)*k+ox).attr('y',(-ty/sc)*k+oy)
+      .attr('width',(cvW/sc)*k).attr('height',(cvH/sc)*k)
+      .attr('fill','none').attr('stroke','#2980b9').attr('stroke-width',1.5);
+  }
+}
+
+function highlightHartaNode(id){
+  if(!hartaState) return;
+  const nb=new Set([id]);
+  (hartaState.links||[]).forEach(l=>{
+    const s=l.source.id??l.source,t=l.target.id??l.target;
+    if(s===id) nb.add(t); if(t===id) nb.add(s);
+  });
+  d3.selectAll('.hnode').classed('dimmed',d=>!nb.has(d.id)).classed('highlighted',d=>d.id===id);
+  d3.selectAll('.hlink').classed('dimmed',d=>{
+    const s=d.source.id??d.source,t=d.target.id??d.target;
+    return s!==id&&t!==id;
+  });
+}
+function clearHartaHL(){
+  d3.selectAll('.hnode').classed('dimmed',false).classed('highlighted',false);
+  d3.selectAll('.hlink').classed('dimmed',false);
+}
+function updateHartaFilter(){
+  if(!hartaState) return;
+  if(!globalQ&&!activeTags.size){clearHartaHL();return;}
+  d3.selectAll('.hnode').classed('dimmed',d=>!nodeMatchesGlobal(d));
+}
+
+function hartaSearch(q){
+  const res=document.getElementById('harta-search-results');
+  if(!q){res.style.display='none';return;}
+  const vt=new Set(['cs','uc','ul','finalitati']);
+  const matches=DATA.nodes.filter(n=>{
+    if(!vt.has(n.type)) return false;
+    const hay=[n.title,n.cod,n.summary||'',...n.continut,...n.notiuninoi].join(' ').toLowerCase();
+    return hay.includes(q);
+  }).slice(0,14);
+  const tm={cs:'CS',uc:'UC',ul:'UInv',finalitati:'Final.'};
+  res.innerHTML=matches.length
+    ?matches.map(n=>`<div class="hsr-item" data-hid="${escHtml(n.id)}"><span class="hsr-type">${tm[n.type]||n.type}</span><span class="hsr-title" title="${escHtml(n.title)}">${escHtml(n.title)}</span></div>`).join('')
+    :'<div class="hsr-empty">Niciun rezultat</div>';
+  res.style.display='block';
+  res.querySelectorAll('.hsr-item[data-hid]').forEach(el=>{
+    el.addEventListener('click',()=>{
+      document.getElementById('harta-q').value=el.querySelector('.hsr-title').textContent;
+      res.style.display='none';
+      zoomToHartaNode(el.dataset.hid);
+    });
+  });
+}
+
+function zoomToHartaNode(id){
+  if(!hartaState) return;
+  let nd=hartaState.nodes.find(n=>n.id===id);
+  if(!nd){
+    const n=nmap[id];
+    if(n&&n.type==='ul'){document.getElementById('hg-ul').checked=true;rebuildHarta();}
+    else if(n&&n.type==='finalitati'){document.getElementById('hg-fin').checked=true;rebuildHarta();}
+    setTimeout(()=>zoomToHartaNode(id),700);
+    return;
+  }
+  const{svg,zoom,W,H}=hartaState;
+  const k=2.0,tx=W/2-nd.x*k,ty=H/2-nd.y*k;
+  svg.transition().duration(650).call(zoom.transform,d3.zoomIdentity.translate(tx,ty).scale(k));
+  setTimeout(()=>highlightHartaNode(id),660);
+  showDetail(id);
+}
+
+
+// ═══════════════════════════════════════════════════════
+// VIEW 3 — UC MATRIX
+// ═══════════════════════════════════════════════════════
+function getFilteredUCs(){
+  const comp=document.getElementById('uc-comp').value;
+  const cs=document.getElementById('uc-cs').value;
+  return DATA.nodes.filter(n=>{
+    if(n.type!=='uc') return false;
+    if(comp!=='all'&&n.component!==comp) return false;
+    if(cs!=='all'&&!n.cs.includes(+cs)) return false;
+    return true;
+  }).sort((a,b)=>{
+    if(a.component!==b.component) return a.component==='tic'?-1:1;
+    const ac=a.cs[0]||0,bc=b.cs[0]||0;
+    return ac!==bc?ac-bc:a.cod.localeCompare(b.cod,'ro');
+  });
+}
+
+function renderUCMatrix(){
+  const ucs=getFilteredUCs();
+  const wrap=document.getElementById('uc-wrap');
+  const tbl=document.createElement('table');
+  tbl.className='mtx';
+  const thead=tbl.createTHead();
+  const hr=thead.insertRow();
+  const th0=document.createElement('th');
+  th0.textContent='Unitate de competență';
+  th0.style.minWidth='195px';
+  hr.appendChild(th0);
+  ROMAN.forEach(r=>{
+    const th=document.createElement('th');
+    th.textContent='Cls. '+r;
+    th.className='ch';
+    hr.appendChild(th);
+  });
+
+  const tbody=tbl.createTBody();
+  let lastKey='';
+  ucs.forEach(uc=>{
+    const csNum=uc.cs[0]||0;
+    const gkey=uc.component+'_'+csNum;
+    if(gkey!==lastKey){
+      lastKey=gkey;
+      const sep=tbody.insertRow();
+      sep.className='grp-sep';
+      const td=sep.insertCell();
+      td.colSpan=10;
+      const compLbl=uc.component==='tic'?'Digital TIC':'Educație Tehnologică';
+      td.innerHTML=`<span style="color:${CS_COL[csNum]||'#7f8c8d'}">▶</span> ${compLbl} — <strong>CS ${csNum}</strong>`;
+    }
+    const row=tbody.insertRow();
+    row.className=`cs${csNum}-r`;
+    const hdrTd=row.insertCell();
+    hdrTd.className='uc-hdr';
+    hdrTd.title=uc.title;
+    hdrTd.addEventListener('click',()=>showDetail(uc.id));
+    const short=uc.title.replace(uc.cod+' - ','').substring(0,42);
+    hdrTd.innerHTML=`<div class="uc-cod">${uc.cod}</div><span class="uc-short">${short}</span>`;
+    for(let cls=1;cls<=9;cls++){
+      const td=row.insertCell();
+      const ucons=ucByUcCls[uc.id+'_'+cls]||[];
+      td.className='mcell '+(ucons.length?'has':'empty');
+      ucons.forEach(uid=>{
+        const un=nmap[uid]; if(!un) return;
+        const chip=document.createElement('span');
+        chip.className='chip '+(un.component==='tic'?'dig':'tehn');
+        const lbl=uid.replace(/^(?:DIG|TEHN)\s+(?:IX|VIII|VII|VI|IV|V|III|II|I)\s+/,'').replace(/\s*-.*$/,'');
+        chip.textContent=lbl;
+        chip.title=un.title;
+        chip.addEventListener('click',e=>{e.stopPropagation();showDetail(uid);});
+        td.appendChild(chip);
+      });
+    }
+  });
+  tbl.appendChild(tbody);
+  wrap.innerHTML='';
+  wrap.appendChild(tbl);
+}
+['uc-comp','uc-cs'].forEach(id=>document.getElementById(id).addEventListener('change',renderUCMatrix));
+
+// ═══════════════════════════════════════════════════════
+// VIEW 4 — UINV TABLE
+// ═══════════════════════════════════════════════════════
+function filterUCons(){
+  const q   =document.getElementById('uc2-q').value.toLowerCase();
+  const cls =document.getElementById('uc2-cls').value;
+  const comp=document.getElementById('uc2-comp').value;
+  const cs  =document.getElementById('uc2-cs').value;
+
+  const rows=DATA.nodes.filter(n=>{
+    if(n.type!=='ul') return false;
+    if(!nodeMatchesGlobal(n)) return false;
+    if(comp!=='all'&&n.component!==comp) return false;
+    if(cs!=='all'&&!n.cs.includes(+cs)) return false;
+    if(cls!=='all'&&(!Array.isArray(n.class)||!n.class.includes(+cls))) return false;
+    if(q&&!n.title.toLowerCase().includes(q)&&!n.cod.toLowerCase().includes(q)&&
+       !(n.continut.join(' ')+' '+n.notiuninoi.join(' ')).toLowerCase().includes(q)) return false;
+    return true;
+  }).sort((a,b)=>{
+    const ac=Array.isArray(a.class)?a.class[0]:0;
+    const bc=Array.isArray(b.class)?b.class[0]:0;
+    if(ac!==bc) return ac-bc;
+    if(a.component!==b.component) return a.component==='tic'?-1:1;
+    return a.title.localeCompare(b.title,'ro');
+  });
+
+  document.getElementById('uc2-cnt').textContent=rows.length+' rezultate';
+  const tbody=document.getElementById('utbody');
+  tbody.innerHTML='';
+
+  rows.forEach(u=>{
+    const tr=document.createElement('tr');
+    tr.addEventListener('click',()=>{
+      // Toggle expanded row
+      const next=tr.nextElementSibling;
+      if(next&&next.classList.contains('uinv-expand-row')){
+        next.remove(); tr.classList.remove('expanded'); return;
+      }
+      document.querySelectorAll('.uinv-expand-row').forEach(r=>r.remove());
+      document.querySelectorAll('#utbody tr.expanded').forEach(r=>r.classList.remove('expanded'));
+      tr.classList.add('expanded');
+      const expRow=document.createElement('tr');
+      expRow.className='uinv-expand-row';
+      const td=document.createElement('td');
+      td.colSpan=6;
+      const conHtml=u.continut.length
+        ?`<ol class="uinv-expand-ol">${u.continut.map(c=>`<li>${escHtml(c)}</li>`).join('')}</ol>`
+        :'<em style="color:var(--muted)">Necompletate</em>';
+      const notHtml=u.notiuninoi.length
+        ?u.notiuninoi.map(t=>`<span class="notiune-tag">${escHtml(t)}</span>`).join(' ')
+        :'<em style="color:var(--muted)">Necompletate</em>';
+      const actHtml=u.actdom?`<div style="margin-bottom:6px"><b>Acțiune dominantă:</b> ${escHtml(u.actdom)}</div>`:'';
+      const prodHtml=u.produsfinale?`<div style="margin-bottom:8px"><b>Produs final:</b> ${escHtml(u.produsfinale)}</div>`:'';
+      td.innerHTML=actHtml+prodHtml+`<div class="uinv-expand-grid">
+        <div><div class="uinv-expand-h">Unități de conținut</div>${conHtml}</div>
+        <div><div class="uinv-expand-h">Noțiuni noi</div><div style="display:flex;flex-wrap:wrap;gap:3px">${notHtml}</div></div>
+      </div>`;
+      expRow.appendChild(td);
+      tr.after(expRow);
+    });
+
+    const clsN=Array.isArray(u.class)?u.class[0]:null;
+    const clsR=clsN?ROMAN[clsN-1]:'—';
+    const compLbl=u.component==='tic'?'TIC':'ET';
+    const compCls=u.component==='tic'?'b-tic':'b-et';
+    const ucLinks=(lBySrc[u.id]||[]).filter(l=>l.type==='Consists Of').map(l=>l.target);
+    const ndc=ndvClass(u.niveldezv);
+    tr.innerHTML=`
+      <td><span class="cls-circle">${clsR}</span></td>
+      <td><span class="badge ${compCls}">${compLbl}</span></td>
+      <td style="font-weight:500">${u.title}</td>
+      <td>${u.niveldezv?`<span class="ndv-badge ${ndc}">${u.niveldezv}</span>`:''}</td>
+      <td>${u.cs.map(c=>`<span class="badge b-cs${c}">CS${c}</span>`).join('')}</td>
+      <td>${ucLinks.map(id=>`<span class="uc-chip">${id}</span>`).join('')}</td>`;
+    tbody.appendChild(tr);
+  });
+
+  if(!rows.length){
+    tbody.innerHTML='<tr><td colspan="6" class="empty-state">Nicio unitate găsită.</td></tr>';
+  }
+}
+['uc2-cls','uc2-comp','uc2-cs'].forEach(id=>document.getElementById(id).addEventListener('change',filterUCons));
+document.getElementById('uc2-q').addEventListener('input',filterUCons);
+function renderUConTable(){ filterUCons(); }
+
+// ═══════════════════════════════════════════════════════
+// VIEW 5 — D3 GRAPH
+// ═══════════════════════════════════════════════════════
+function nodeColor(n){
+  if(n.type==='cs') return '#e74c3c';
+  if(n.type==='conceptie') return '#95a5a6';
+  if(n.type==='uc') return n.component==='tic'?'#16a085':'#d35400';
+  if(n.type==='ul') return n.component==='tic'?'#3498db':'#e74c3c';
+  if(n.type==='finalitati') return '#8e44ad';
+  return '#bdc3c7';
+}
+function nodeR(n){
+  if(n.type==='cs') return 22;
+  if(n.type==='conceptie') return 13;
+  if(n.type==='uc') return 11;
+  if(n.type==='finalitati') return 9;
+  return 6;
+}
+function linkColor(l){
+  if(l.type==='Consists Of') return '#27ae60';
+  if(l.type==='Expects'||l.type==='Expected By') return '#2980b9';
+  return '#bdc3c7';
+}
+
+function initGraph(){
+  const svg=d3.select('#fg');
+  const g=svg.append('g').attr('id','gg');
+  g.append('g').attr('id','lg');
+  g.append('g').attr('id','ng');
+  const zoom=d3.zoom().scaleExtent([.08,6]).on('zoom',e=>g.attr('transform',e.transform));
+  svg.call(zoom);
+  svgRef={svg,g,zoom};
+  document.getElementById('g-reset').addEventListener('click',()=>
+    svg.transition().duration(400).call(zoom.transform,d3.zoomIdentity));
+  ['g-cs','g-uc','g-ucon','g-finalitati','g-con','g-tic','g-et','g-comun'].forEach(id=>
+    document.getElementById(id).addEventListener('change',updateGraph));
+}
+
+function updateGraph(){
+  if(!svgRef) return;
+  const {svg,g,zoom}=svgRef;
+  const cvs=document.getElementById('graph-canvas');
+  const W=cvs.clientWidth||800,H=cvs.clientHeight||600;
+
+  const showTypes=[];
+  if(document.getElementById('g-cs').checked)       showTypes.push('cs');
+  if(document.getElementById('g-uc').checked)       showTypes.push('uc');
+  if(document.getElementById('g-ucon').checked)     showTypes.push('ul');
+  if(document.getElementById('g-finalitati').checked) showTypes.push('finalitati');
+  if(document.getElementById('g-con').checked)      showTypes.push('conceptie');
+
+  const showComps=[];
+  if(document.getElementById('g-tic').checked)   showComps.push('tic');
+  if(document.getElementById('g-et').checked)    showComps.push('et');
+  if(document.getElementById('g-comun').checked) showComps.push('comun');
+
+  const visNodes=DATA.nodes.filter(n=>
+    showTypes.includes(n.type)&&(n.component==='comun'||showComps.includes(n.component))
+  );
+  const visIds=new Set(visNodes.map(n=>n.id));
+  const visLinks=DATA.links.filter(l=>
+    visIds.has(l.source)&&visIds.has(l.target)&&
+    (l.type==='Consists Of'||l.type==='Expects')
+  );
+
+  if(simRef) simRef.stop();
+  const oldPos={};
+  if(simRef&&simRef._nodes) simRef._nodes.forEach(n=>{oldPos[n.id]={x:n.x,y:n.y};});
+
+  const sNodes=visNodes.map(n=>({...n,x:oldPos[n.id]?.x??W/2+(Math.random()-.5)*300,y:oldPos[n.id]?.y??H/2+(Math.random()-.5)*300}));
+  const sMap=Object.fromEntries(sNodes.map(n=>[n.id,n]));
+  const sLinks=visLinks.filter(l=>sMap[l.source]&&sMap[l.target]).map(l=>({source:sMap[l.source],target:sMap[l.target],type:l.type}));
+
+  const lg=g.select('#lg'),ng=g.select('#ng');
+  const linkSel=lg.selectAll('line').data(sLinks,d=>d.source.id+'→'+d.target.id+'|'+d.type)
+    .join('line').attr('class','glink')
+    .attr('stroke',d=>linkColor(d))
+    .attr('stroke-width',d=>d.type==='Consists Of'?1.5:1)
+    .attr('stroke-dasharray',d=>d.type==='Expects'?'5,3':null);
+
+  const drag=d3.drag()
+    .on('start',(e,d)=>{if(!e.active)simRef.alphaTarget(.3).restart();d.fx=d.x;d.fy=d.y;})
+    .on('drag',(e,d)=>{d.fx=e.x;d.fy=e.y;})
+    .on('end',(e,d)=>{if(!e.active)simRef.alphaTarget(0);d.fx=null;d.fy=null;});
+
+  const nodeSel=ng.selectAll('g.gnode').data(sNodes,d=>d.id)
+    .join(enter=>enter.append('g').attr('class','gnode')
+      .call(drag)
+      .on('click',(e,d)=>{e.stopPropagation();showDetail(d.id);})
+      .call(g2=>{g2.append('circle');g2.append('title');g2.append('text').attr('text-anchor','middle').attr('dy','0.35em');}));
+
+  nodeSel.select('circle').attr('r',d=>nodeR(d)).attr('fill',d=>nodeColor(d));
+  nodeSel.select('title').text(d=>d.title);
+  nodeSel.select('text')
+    .attr('y',d=>nodeR(d)+11)
+    .attr('font-size',d=>d.type==='cs'?11:d.type==='uc'?9:7.5)
+    .text(d=>{
+      if(d.type==='cs') return d.cod;
+      if(d.type==='uc') return d.cod;
+      if(d.type==='ul') return d.id.replace(/^(?:DIG|TEHN)\s+(?:IX|VIII|VII|VI|IV|V|III|II|I)\s+/,'').replace(/\s*-.*/,'');
+      if(d.type==='finalitati') return 'Cl.'+ROMAN[(Array.isArray(d.class)?d.class[0]:1)-1];
+      return d.id.substring(0,16);
+    });
+
+  simRef=d3.forceSimulation(sNodes)
+    .force('link',d3.forceLink(sLinks).id(d=>d.id).distance(d=>d.source.type==='cs'?110:d.source.type==='uc'?65:80).strength(.6))
+    .force('charge',d3.forceManyBody().strength(d=>d.type==='cs'?-900:d.type==='uc'?-280:-70))
+    .force('center',d3.forceCenter(W/2,H/2))
+    .force('collision',d3.forceCollide().radius(d=>nodeR(d)+7))
+    .on('tick',()=>{
+      linkSel.attr('x1',d=>d.source.x).attr('y1',d=>d.source.y).attr('x2',d=>d.target.x).attr('y2',d=>d.target.y);
+      nodeSel.attr('transform',d=>`translate(${d.x},${d.y})`);
+    });
+  simRef._nodes=sNodes;
+}
+document.getElementById('fg').addEventListener('click',()=>closeDetail());
+
+// ═══════════════════════════════════════════════════════
+// VIEW 6 — EXPLORER
+// ═══════════════════════════════════════════════════════
+function filterExplorer(){
+  const q   =document.getElementById('eq').value.toLowerCase();
+  const type=document.getElementById('et2').value;
+  const comp=document.getElementById('ec').value;
+  const cls =document.getElementById('ecls').value;
+  const cs  =document.getElementById('ecs').value;
+
+  let nodes=DATA.nodes.filter(n=>{
+    if(!nodeMatchesGlobal(n)) return false;
+    if(type!=='all'&&n.type!==type) return false;
+    if(comp!=='all'&&n.component!==comp) return false;
+    if(cs!=='all'&&!n.cs.includes(+cs)) return false;
+    if(cls!=='all'){
+      if(n.class==='toate'){/* pass */}
+      else if(!Array.isArray(n.class)||!n.class.includes(+cls)) return false;
+    }
+    if(q&&!n.title.toLowerCase().includes(q)&&!n.cod.toLowerCase().includes(q)&&
+       !(n.summary||'').toLowerCase().includes(q)&&
+       !(n.continut.join(' ')+' '+n.notiuninoi.join(' ')).toLowerCase().includes(q)) return false;
+    return true;
+  });
+
+  document.getElementById('ecnt').textContent=nodes.length+' rezultate';
+  const grid=document.getElementById('exp-grid');
+  grid.innerHTML='';
+
+  if(!nodes.length){
+    grid.innerHTML='<div class="empty-state">Niciun rezultat găsit.</div>';
+    return;
+  }
+
+  nodes.forEach(n=>{
+    const card=document.createElement('div');
+    card.className='ncard';
+    card.addEventListener('click',()=>showDetail(n.id));
+    const compCls=n.component==='tic'?'b-tic':n.component==='et'?'b-et':'b-comun';
+    const compLbl=n.component==='tic'?'TIC':n.component==='et'?'ET':'Comun';
+    const typeMap={cs:'CS',uc:'UC',ul:'UInv',finalitati:'Finalități',conceptie:'Concepție'};
+    const typeLbl=typeMap[n.type]||n.type;
+    const clsBadges=Array.isArray(n.class)?n.class.map(c=>`<span class="badge" style="background:#f0f2f5;color:var(--muted)">Cls.${ROMAN[c-1]}</span>`).join(''):'';
+    const ndc=ndvClass(n.niveldezv);
+    const ndvBadge=n.niveldezv?`<span class="ndv-badge ${ndc}" style="font-size:.68rem">${n.niveldezv}</span>`:'';
+    const tagBadges=n.tags.slice(0,4).map(t=>`<span class="badge" style="background:#f8f9fa;color:var(--muted);font-size:.65rem">${t}</span>`).join('');
+
+    card.innerHTML=`
+      <div class="ncard-title">${n.title}</div>
+      ${n.summary?`<div class="ncard-sum">${n.summary}</div>`:''}
+      <div class="ncard-meta">
+        <span class="badge b-type">${typeLbl}</span>
+        <span class="badge ${compCls}">${compLbl}</span>
+        ${ndvBadge}
+        ${n.cs.map(c=>`<span class="badge b-cs${c}">CS${c}</span>`).join('')}
+        ${clsBadges}
+        ${tagBadges}
+      </div>`;
+    grid.appendChild(card);
+  });
+}
+['eq','et2','ec','ecls','ecs'].forEach(id=>{
+  const el=document.getElementById(id);
+  el.addEventListener(el.tagName==='SELECT'?'change':'input',filterExplorer);
+});
+function renderExplorer(){ filterExplorer(); }
+
+// ═══════════════════════════════════════════════════════
+// DETAIL PANEL
+// ═══════════════════════════════════════════════════════
+function showDetail(id){
+  const n=nmap[id]; if(!n) return;
+  document.getElementById('dp-title').textContent=n.title;
+  document.getElementById('detail-panel').classList.add('open');
+
+  const compCls=n.component==='tic'?'b-tic':n.component==='et'?'b-et':'b-comun';
+  const compLbl=n.component==='tic'?'Digital TIC':n.component==='et'?'Educație Tehnologică':'Comun';
+  const typeMap={cs:'Competență Specifică',uc:'Unitate de Competență',ul:'Unitate de Învățare',finalitati:'Finalitățile Învățării',conceptie:'Concepția Disciplinei'};
+  const typeLbl=typeMap[n.type]||n.type;
+  const clsStr=n.class==='toate'?'Toate clasele':Array.isArray(n.class)?n.class.map(c=>'Cls. '+ROMAN[c-1]).join(', '):'—';
+  const ndc=ndvClass(n.niveldezv);
+
+  const out=lBySrc[id]||[];
+  const partOf    =out.filter(l=>l.type==='Part Of');
+  const consistsOf=out.filter(l=>l.type==='Consists Of');
+  const expects   =out.filter(l=>l.type==='Expects');
+  const expectedBy=out.filter(l=>l.type==='Expected By');
+  const includedIn=(lByTgt[id]||[]).filter(l=>l.type==='Consists Of');
+
+  function relHtml(links,getIdFn){
+    if(!links.length) return '<li style="color:var(--muted)">—</li>';
+    return links.map(l=>{
+      const tid=getIdFn(l),tn=nmap[tid];
+      const lbl=tn?tn.title:tid;
+      return `<li><a class="rel-link" data-id="${tid}">${lbl}</a></li>`;
+    }).join('');
+  }
+
+  let body=`
+    <div style="margin-bottom:10px">
+      <span class="badge b-type">${typeLbl}</span>
+      <span class="badge ${compCls}">${compLbl}</span>
+      ${n.cs.map(c=>`<span class="badge b-cs${c}">CS ${c}</span>`).join('')}
+      ${n.niveldezv?`<span class="ndv-badge ${ndc}">${n.niveldezv}</span>`:''}
+    </div>
+    <div style="font-size:.77rem;color:var(--muted);margin-bottom:8px">${clsStr}${n.ciclu?' · '+n.ciclu:''}</div>`;
+
+  if(n.actdom||n.produsfinale){
+    body+=`<div class="dp-sec">`;
+    if(n.actdom) body+=`<div style="font-size:.78rem;margin-bottom:3px"><b>Acțiune:</b> ${escHtml(n.actdom)}</div>`;
+    if(n.produsfinale) body+=`<div style="font-size:.78rem"><b>Produs:</b> ${escHtml(n.produsfinale)}</div>`;
+    body+=`</div>`;
+  }
+
+  if(n.summary) body+=`<div class="dp-summary">${n.summary}</div>`;
+
+  if(n.type==='finalitati'&&n.finalitatiCS&&Object.keys(n.finalitatiCS).length){
+    const csNames={1:'Explorarea și analiza mediului',2:'Proiectarea și realizarea de produse',
+                   3:'Utilizarea tehnologiilor digitale',4:'Valorificarea competențelor'};
+    const csBorders={1:'var(--cs1)',2:'var(--cs2)',3:'var(--cs3)',4:'var(--cs4)'};
+    for(const [csNum,d] of Object.entries(n.finalitatiCS)){
+      const cn=csNames[+csNum]||('CS '+csNum);
+      body+=`<div class="fin-cs-block" style="border-color:${csBorders[+csNum]||'var(--border)'}">
+        <div class="fin-cs-head"><span style="color:${csBorders[+csNum]||'#555'}">CS ${csNum}</span> — ${cn}</div>`;
+      if(d.c&&d.c.length) body+=`<div class="fin-sub"><span class="fin-sub-label">Cunoştinţe</span><ul>${d.c.map(t=>`<li>${escHtml(t)}</li>`).join('')}</ul></div>`;
+      if(d.a&&d.a.length) body+=`<div class="fin-sub"><span class="fin-sub-label">Abilităţi</span><ul>${d.a.map(t=>`<li>${escHtml(t)}</li>`).join('')}</ul></div>`;
+      if(d.v&&d.v.length) body+=`<div class="fin-sub"><span class="fin-sub-label">Valori şi atitudini</span><ul>${d.v.map(t=>`<li>${escHtml(t)}</li>`).join('')}</ul></div>`;
+      body+=`</div>`;
+    }
+  }
+
+  if(n.continut.length){
+    body+=`<div class="dp-sec"><h4>Unități de conținut (${n.continut.length})</h4>
+      <ol class="dp-continut">${n.continut.map(c=>`<li>${escHtml(c)}</li>`).join('')}</ol></div>`;
+  }
+
+  if(n.notiuninoi.length){
+    body+=`<div class="dp-sec"><h4>Noțiuni noi</h4>
+      <div class="dp-notiuni">${n.notiuninoi.map(t=>`<span class="notiune-tag">${escHtml(t)}</span>`).join('')}</div></div>`;
+  }
+
+  if(n.tags.length){
+    body+=`<div class="dp-sec"><h4>Taguri</h4>
+      <div style="display:flex;flex-wrap:wrap;gap:3px">${n.tags.map(t=>`<span class="badge" style="background:#f0f2f5;color:var(--muted);cursor:pointer" onclick="toggleTag('${t.replace(/'/g,"\\'")}')">${t}</span>`).join('')}</div></div>`;
+  }
+
+  if(partOf.length) body+=`<div class="dp-sec"><h4>Part Of</h4><ul class="rel-list">${relHtml(partOf,l=>l.target)}</ul></div>`;
+  if(consistsOf.length) body+=`<div class="dp-sec"><h4>Consists Of</h4><ul class="rel-list">${relHtml(consistsOf,l=>l.target)}</ul></div>`;
+  if(expects.length) body+=`<div class="dp-sec"><h4>Expects</h4><ul class="rel-list">${relHtml(expects,l=>l.target)}</ul></div>`;
+  if(expectedBy.length) body+=`<div class="dp-sec"><h4>Expected By</h4><ul class="rel-list">${relHtml(expectedBy,l=>l.target)}</ul></div>`;
+  if(includedIn.length) body+=`<div class="dp-sec"><h4>Inclus în UC</h4><ul class="rel-list">${relHtml(includedIn,l=>l.source)}</ul></div>`;
+
+  if(n.updated) body+=`<div style="margin-top:14px;font-size:.69rem;color:var(--muted)">Actualizat: ${n.updated}</div>`;
+
+  document.getElementById('dp-body').innerHTML=body;
+  document.querySelectorAll('.rel-link').forEach(a=>
+    a.addEventListener('click',e=>{e.preventDefault();showDetail(a.dataset.id);})
+  );
+}
+
+function closeDetail(){
+  document.getElementById('detail-panel').classList.remove('open');
+}
+document.getElementById('dp-close').addEventListener('click',closeDetail);
+
+// ═══════════════════════════════════════════════════════
+// UTILS
+// ═══════════════════════════════════════════════════════
+function escHtml(s){
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+</script>
+</body>
+</html>
